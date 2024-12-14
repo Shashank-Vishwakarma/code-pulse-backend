@@ -3,8 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/Shashank-Vishwakarma/code-pulse-backend/config"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/routes"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,6 +26,11 @@ func init() {
 
 func main() {
 	r := gin.Default()
+
+	// register middlewares
+
+	// register routes
+	routes.AuthRoutes(r)
 
 	err := r.Run(":" + config.Config.PORT)
 	if err != nil {

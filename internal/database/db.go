@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Shashank-Vishwakarma/code-pulse-backend/config"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )

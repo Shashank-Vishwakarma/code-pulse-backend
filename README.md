@@ -59,12 +59,9 @@ Code Pulse is a comprehensive online learning platform designed to empower devel
      - Horizontal scalability
      - Supports complex queries and indexing
 
-4. **ORM & Database Tools**
-   - **Gorm**
-     - Powerful ORM library for Go
-     - Supports multiple database dialects
-     - Simplified database operations
-     - Advanced query building and model associations
+4. **Schema Validation**
+   - **Go Validator**
+     - Standard library for schema validation
 
 5. **Configuration Management**
    - **Viper**
