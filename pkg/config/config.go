@@ -13,13 +13,14 @@ var Config *Env
 type Env struct {
 	PORT           string `mapstructure:"PORT"`
 	DATABASE_URL   string `mapstructure:"DATABASE_URL"`
+	DATABASE_NAME  string `mapstructure:"DATABASE_NAME"`
 	JWT_SECRET_KEY string `mapstructure:"JWT_SECRET_KEY"`
 	MODE           string `mapstructure:"MODE"`
 }
 
 func NewEnv() error {
 	path, _ := os.Getwd()
-	os.Chdir(path + "/../")
+	os.Chdir(path + "/../config")
 	viper.SetConfigFile(".env")
 
 	err := viper.ReadInConfig()
@@ -35,6 +36,7 @@ func NewEnv() error {
 	envMap := map[string]string{
 		"PORT":           Config.PORT,
 		"DATABASE_URL":   Config.DATABASE_URL,
+		"DATABASE_NAME":  Config.DATABASE_NAME,
 		"JWT_SECRET_KEY": Config.JWT_SECRET_KEY,
 		"MODE":           Config.MODE,
 	}
