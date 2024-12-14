@@ -51,9 +51,6 @@ Code Pulse is a comprehensive online learning platform designed to empower devel
 
 2. **Gin Web Framework**
    - High-performance HTTP web framework
-   - Lightweight and minimalist
-   - Supports middleware and routing
-   - Excellent performance for API development
 
 3. **Database**
    - **MongoDB**
@@ -73,7 +70,6 @@ Code Pulse is a comprehensive online learning platform designed to empower devel
    - **Viper**
      - Configuration management library
      - Supports multiple file formats (JSON, YAML, ENV)
-     - Environment variable overrides
      - Secure and flexible configuration handling
 
 6. **Authentication**
@@ -82,13 +78,15 @@ Code Pulse is a comprehensive online learning platform designed to empower devel
      - Compact and self-contained
      - Support for claims and token validation
 
-7. **Development & Deployment**
-   - **Docker**
-     - Containerization for consistent environments
-     - Simplified deployment and scaling
-   - **GitHub Actions**
-     - Continuous Integration and Deployment (CI/CD)
-     - Automated testing and build processes
+8. **Caching & Performance**
+   - **Redis**
+     - In-memory data structure store
+     - High-performance caching mechanism
+
+9. **Message Queue & Asynchronous Processing**
+   - **RabbitMQ**
+     - Robust message broker
+     - Asynchronous task processing
 
 ## Additional Tools
 - **Postman**: API development and testing
