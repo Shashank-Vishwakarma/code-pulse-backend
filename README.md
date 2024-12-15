@@ -85,6 +85,10 @@ Code Pulse is a comprehensive online learning platform designed to empower devel
      - Robust message broker
      - Asynchronous task processing
 
+10. **Email Service**
+   - **GoMail**
+     - Simple and efficient email sending library
+
 ## Additional Tools
 - **Postman**: API development and testing
 - **VS Code**: Primary development IDE

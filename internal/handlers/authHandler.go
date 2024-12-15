@@ -7,6 +7,7 @@ import (
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/models"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/queue"
 	request "github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/request/auth"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/response"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/utils"
@@ -50,12 +51,16 @@ func Register(c *gin.Context) {
 		// hash the password
 		hashedPassword := utils.HashPassword(body.Password)
 
+		// generate verification code
+		verificationCode := utils.GenerateVerificationCode()
+
 		// create the user
 		_, err := models.CreateUser(&models.User{
-			Name:     body.Name,
-			Username: "",
-			Email:    body.Email,
-			Password: hashedPassword,
+			Name:             body.Name,
+			Username:         "",
+			Email:            body.Email,
+			Password:         hashedPassword,
+			VerificationCode: verificationCode,
 		})
 		if err != nil {
 			logrus.Errorf("Error creating user: %v", err)
@@ -64,6 +69,11 @@ func Register(c *gin.Context) {
 		}
 
 		// send verification email through rabbitmq and also send username
+		queue.StartProducer(queue.EmailVerificationPayload{
+			Email:    body.Email,
+			Username: body.Username,
+			Code:     verificationCode,
+		})
 
 		response.HandleResponse(c, http.StatusCreated, "User registered successfully. Please verify your email", nil)
 	} else {

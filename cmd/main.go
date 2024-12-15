@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/queue"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/routes"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"github.com/gin-gonic/gin"
@@ -32,7 +33,19 @@ func main() {
 	// register routes
 	routes.AuthRoutes(r)
 
-	err := r.Run(":" + config.Config.PORT)
+	// rabbitmq setup
+	err := queue.InitializeRabbitMQ()
+	if err != nil {
+		log.Fatalf("Failed to initialize RabbitMQ: %v", err)
+	}
+
+	// start the consumer
+	err = queue.StartConsumer()
+	if err != nil {
+		log.Fatalf("Failed to start the consumer: %v", err)
+	}
+
+	err = r.Run(":" + config.Config.PORT)
 	if err != nil {
 		log.Fatalf("Failed to start the server: %v", err)
 	}

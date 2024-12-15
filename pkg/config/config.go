@@ -15,7 +15,20 @@ type Env struct {
 	DATABASE_URL   string `mapstructure:"DATABASE_URL"`
 	DATABASE_NAME  string `mapstructure:"DATABASE_NAME"`
 	JWT_SECRET_KEY string `mapstructure:"JWT_SECRET_KEY"`
-	MODE           string `mapstructure:"MODE"`
+
+	// Email Configuration
+	SMTP_HOST     string `mapstructure:"SMTP_HOST"`
+	SMTP_PORT     int    `mapstructure:"SMTP_PORT"`
+	SMTP_USERNAME string `mapstructure:"SMTP_USERNAME"`
+	SMTP_PASSWORD string `mapstructure:"SMTP_PASSWORD"`
+	FROM_EMAIL    string `mapstructure:"FROM_EMAIL"`
+
+	// RabbitMQ Configuration
+	RABBITMQ_URL string `mapstructure:"RABBITMQ_URL"`
+	QUEUE_NAME   string `mapstructure:"QUEUE_NAME"`
+
+	// Mode for golang
+	MODE string `mapstructure:"MODE"`
 }
 
 func NewEnv() error {
