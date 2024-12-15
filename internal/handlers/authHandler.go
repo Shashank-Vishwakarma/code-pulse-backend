@@ -276,7 +276,47 @@ func VerifyEmail(c *gin.Context) {
 }
 
 func ForgotPassword(c *gin.Context) {
+	var body request.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
+		logrus.Errorf("Invalid request body: ForgotPassword API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
 
+	// validate the request body
+	err := utils.ValidateRequest(body)
+	if err != nil {
+		logrus.Errorf("Error validating the request body: ForgotPassword API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Error validating the request body", nil)
+		return
+	}
+
+	if body.Password != body.ConfirmPassword {
+		logrus.Error("Passwords do not match: ForgotPassword API")
+		response.HandleResponse(c, http.StatusBadRequest, "Passwords do not match", nil)
+		return
+	}
+
+	result := database.UserCollection.FindOneAndUpdate(context.TODO(),
+		bson.M{
+			"$and": bson.A{
+				bson.M{"email": body.Email},
+				bson.M{"username": body.Username},
+			},
+		},
+		bson.M{
+			"$set": bson.M{
+				"password": utils.HashPassword(body.Password),
+			},
+		},
+	)
+	if result.Err() != nil {
+		logrus.Errorf("Error updating the user: ForgotPassword API: %v", result.Err())
+		response.HandleResponse(c, http.StatusInternalServerError, "User not found with the given email and username", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Password updated successfully", nil)
 }
 
 func ResendVerificationCodeViaEmail(c *gin.Context) {
