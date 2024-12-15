@@ -75,17 +75,17 @@ Code Pulse is a comprehensive online learning platform designed to empower devel
      - Compact and self-contained
      - Support for claims and token validation
 
-8. **Caching & Performance**
+7. **Caching & Performance**
    - **Redis**
      - In-memory data structure store
      - High-performance caching mechanism
 
-9. **Message Queue & Asynchronous Processing**
+8. **Message Queue & Asynchronous Processing**
    - **RabbitMQ**
      - Robust message broker
      - Asynchronous task processing
 
-10. **Email Service**
+9. **Email Service**
    - **GoMail**
      - Simple and efficient email sending library
 
