@@ -11,10 +11,13 @@ import (
 var Config *Env
 
 type Env struct {
-	PORT           string `mapstructure:"PORT"`
-	DATABASE_URL   string `mapstructure:"DATABASE_URL"`
-	DATABASE_NAME  string `mapstructure:"DATABASE_NAME"`
-	JWT_SECRET_KEY string `mapstructure:"JWT_SECRET_KEY"`
+	PORT          string `mapstructure:"PORT"`
+	DATABASE_URL  string `mapstructure:"DATABASE_URL"`
+	DATABASE_NAME string `mapstructure:"DATABASE_NAME"`
+
+	JWT_TOKEN_COOKIE    string `mapstructure:"JWT_TOKEN_COOKIE"`
+	JWT_DECODED_PAYLOAD string `mapstructure:"JWT_DECODED_PAYLOAD"`
+	JWT_SECRET_KEY      string `mapstructure:"JWT_SECRET_KEY"`
 
 	// Email Configuration
 	SMTP_HOST     string `mapstructure:"SMTP_HOST"`
@@ -47,11 +50,12 @@ func NewEnv() error {
 	}
 
 	envMap := map[string]string{
-		"PORT":           Config.PORT,
-		"DATABASE_URL":   Config.DATABASE_URL,
-		"DATABASE_NAME":  Config.DATABASE_NAME,
-		"JWT_SECRET_KEY": Config.JWT_SECRET_KEY,
-		"MODE":           Config.MODE,
+		"PORT":             Config.PORT,
+		"DATABASE_URL":     Config.DATABASE_URL,
+		"DATABASE_NAME":    Config.DATABASE_NAME,
+		"JWT_TOKEN_COOKIE": Config.JWT_TOKEN_COOKIE,
+		"JWT_SECRET_KEY":   Config.JWT_SECRET_KEY,
+		"MODE":             Config.MODE,
 	}
 
 	for key, value := range envMap {

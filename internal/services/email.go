@@ -20,7 +20,6 @@ func SendEmail(email, username, verificationCode string) error {
 		if value == "" {
 			return fmt.Errorf("email credential %v is not set", key)
 		}
-		fmt.Println(value)
 	}
 
 	m := gomail.NewMessage()

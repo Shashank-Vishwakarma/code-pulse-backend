@@ -15,7 +15,7 @@ type User struct {
 	Username                  string    `json:"username" bson:"username"`
 	Email                     string    `json:"email" bson:"email"`
 	Password                  string    `json:"password,omitempty" bson:"password"`
-	IsEmailVerified           bool      `json:"is_verified" bson:"is_verified"`
+	IsEmailVerified           bool      `json:"is_email_verified" bson:"is_email_verified"`
 	VerificationCode          string    `json:"verification_code" bson:"verification_code"`
 	VerificationCodeExpiresAt time.Time `json:"verification_code_expires_at" bson:"verification_code_expires_at"`
 	CreatedAt                 time.Time `json:"created_at" bson:"created_at"`

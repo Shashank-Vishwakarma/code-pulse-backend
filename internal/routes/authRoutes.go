@@ -12,4 +12,7 @@ func AuthRoutes(r *gin.Engine) {
 	authGroup.POST(constants.AUTH_API_REGISTER_ENDPOINT, handlers.Register)
 	authGroup.POST(constants.AUTH_API_LOGIN_ENDPOINT, handlers.Login)
 	authGroup.POST(constants.AUTH_API_LOGOUT_ENDPOINT, middlewares.Authorization(), handlers.Logout)
+	authGroup.POST(constants.AUTH_API_EMAIL_VERIFY_ENDPOINT, middlewares.Authorization(), handlers.VerifyEmail)
+	authGroup.POST(constants.AUTH_API_FORGOT_PASSWORD_ENDPOINT, middlewares.Authorization(), handlers.ForgotPassword)
+	authGroup.POST(constants.AUTH_API_RESEND_VERIFICATION_CODE_ENDPOINT, middlewares.Authorization(), handlers.ResendVerificationCodeViaEmail)
 }
