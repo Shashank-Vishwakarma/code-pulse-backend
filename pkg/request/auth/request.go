@@ -12,3 +12,8 @@ type LoginRequest struct {
 	Identifier string `json:"identifier" validate:"required"`
 	Password   string `json:"password" validate:"required,min=8,max=20"`
 }
+
+type VerifyEmailRequest struct {
+	Email string `json:"email" validate:"required,email"`
+	Code  string `json:"code" validate:"required,min=6,max=6"`
+}

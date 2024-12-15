@@ -8,7 +8,6 @@ import (
 )
 
 type JWTPayload struct {
-	UserID   string `json:"user_id"`
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
@@ -16,7 +15,6 @@ type JWTPayload struct {
 
 func GenerateToken(payload JWTPayload) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":  payload.UserID,
 		"name":     payload.Name,
 		"email":    payload.Email,
 		"username": payload.Username,

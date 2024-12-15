@@ -75,7 +75,30 @@ func Register(c *gin.Context) {
 			Code:     verificationCode,
 		})
 
-		response.HandleResponse(c, http.StatusCreated, "User registered successfully. Please verify your email", nil)
+		// set jwt token in cookie
+		token, err := utils.GenerateToken(utils.JWTPayload{
+			Name:     body.Name,
+			Email:    body.Email,
+			Username: body.Username,
+		})
+		if err != nil {
+			logrus.Errorf("Error generating the token: Login API: %v", err)
+			response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+			return
+		}
+
+		c.SetCookie(config.Config.JWT_TOKEN_COOKIE, token, time.Now().Hour()*24, "/", "", false, true)
+
+		responseData := struct {
+			Name     string `json:"name"`
+			Email    string `json:"email"`
+			Username string `json:"username"`
+		}{
+			Name:     body.Name,
+			Email:    body.Email,
+			Username: body.Username,
+		}
+		response.HandleResponse(c, http.StatusCreated, "User registered successfully. Please verify your email", responseData)
 	} else {
 		var decodedUser models.User
 		if err := userExistsWithEmail.Decode(&decodedUser); err != nil {
@@ -143,7 +166,6 @@ func Login(c *gin.Context) {
 
 	// set jwt token in cookie
 	token, err := utils.GenerateToken(utils.JWTPayload{
-		UserID:   decodedUser.ID,
 		Name:     decodedUser.Name,
 		Email:    decodedUser.Email,
 		Username: decodedUser.Username,
@@ -174,7 +196,83 @@ func Logout(c *gin.Context) {
 }
 
 func VerifyEmail(c *gin.Context) {
+	var body request.VerifyEmailRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
+		logrus.Errorf("Invalid request body: VerifyEmail API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
 
+	// validate the request body
+	err := utils.ValidateRequest(body)
+	if err != nil {
+		logrus.Errorf("Error validating the request body: VerifyEmail API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Error validating the request body", nil)
+		return
+	}
+
+	result := database.UserCollection.FindOne(context.TODO(), bson.M{"email": body.Email})
+	if result.Err() != nil {
+		logrus.Errorf("User not found: VerifyEmail API: %v", result.Err())
+		response.HandleResponse(c, http.StatusNotFound, "User not found", nil)
+		return
+	}
+
+	var user models.User
+	if err := result.Decode(&user); err != nil {
+		logrus.Errorf("Error decoding the user: VerifyEmail API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	if user.IsEmailVerified {
+		logrus.Error("Email already verified: VerifyEmail API")
+		response.HandleResponse(c, http.StatusBadRequest, "Email is already verified. Please login", nil)
+		return
+	}
+
+	if user.VerificationCode != body.Code {
+		logrus.Error("Invalid verification code: VerifyEmail API")
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid verification code", nil)
+		return
+	}
+
+	if user.VerificationCodeExpiresAt.Unix() < utils.GetCurrentDateTime() {
+		logrus.Error("Verification code expired: VerifyEmail API")
+		response.HandleResponse(c, http.StatusBadRequest, "Verification code expired. Please resend the verification code", nil)
+		return
+	}
+
+	// get the data from context
+	userData, exists := c.Get(config.Config.JWT_DECODED_PAYLOAD)
+	if !exists {
+		logrus.Error("User data not found: VerifyEmail API")
+		response.HandleResponse(c, http.StatusBadRequest, "User data not found", nil)
+		return
+	}
+
+	decodedUser, ok := userData.(utils.JWTPayload)
+	if !ok {
+		logrus.Error("Invalid user data: VerifyEmail API")
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid user data", nil)
+		return
+	}
+
+	result = database.UserCollection.FindOneAndUpdate(context.TODO(), bson.M{"email": body.Email}, bson.M{
+		"$set": bson.M{
+			"username":                     decodedUser.Username,
+			"is_email_verified":            true,
+			"verification_code":            "",
+			"verification_code_expires_at": time.Time{},
+		},
+	})
+	if result.Err() != nil {
+		logrus.Errorf("Error updating the user: VerifyEmail API: %v", result.Err())
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Email Verified sucessfully", nil)
 }
 
 func ForgotPassword(c *gin.Context) {
