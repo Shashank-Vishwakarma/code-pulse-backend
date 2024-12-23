@@ -5,7 +5,10 @@ import (
 )
 
 type Difficulty string
+
 type QuestionStatus string
+
+type Language string
 
 const (
 	Easy   Difficulty = "Easy"
@@ -15,6 +18,10 @@ const (
 	Pending  QuestionStatus = "Pending"
 	Approved QuestionStatus = "Approved"
 	Rejected QuestionStatus = "Rejected"
+
+	Python     Language = "Python"
+	JavaScript Language = "JavaScript"
+	Cpp        Language = "C++"
 )
 
 type TestCase struct {
@@ -24,8 +31,8 @@ type TestCase struct {
 }
 
 type CodeSnippet struct {
-	Language string `json:"language" bson:"language"`
-	Code     string `json:"code" bson:"code"`
+	Language Language `json:"language" bson:"language"`
+	Code     string   `json:"code" bson:"code"`
 }
 
 type Question struct {
@@ -42,6 +49,8 @@ type Question struct {
 	TotalSubmissions    int            `json:"totalSubmissions,omitempty" bson:"totalSubmissions,omitempty"`
 	Status              QuestionStatus `json:"status" bson:"status"`
 	IsQuestionPublished bool           `json:"isQuestionPublished" bson:"isQuestionPublished"`
+	Likes               []string       `json:"likes,omitempty" bson:"likes,omitempty"`
+	Dislikes            []string       `json:"dislikes,omitempty" bson:"dislikes,omitempty"`
 	AuthorID            string         `json:"authorId,omitempty" bson:"authorId,omitempty"`
 	CreatedAt           time.Time      `json:"createdAt" bson:"createdAt"`
 }
