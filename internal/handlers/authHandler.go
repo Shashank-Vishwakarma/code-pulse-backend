@@ -191,7 +191,7 @@ func Login(c *gin.Context) {
 }
 
 func Logout(c *gin.Context) {
-	c.SetCookie(config.Config.JWT_TOKEN_COOKIE, "", 0, "/", "", false, true)
+	c.SetCookie(config.Config.JWT_TOKEN_COOKIE, "", -1, "/", "", false, true)
 	response.HandleResponse(c, http.StatusOK, "Logout successful", nil)
 }
 
