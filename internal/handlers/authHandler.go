@@ -316,7 +316,7 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	response.HandleResponse(c, http.StatusOK, "Password updated successfully", nil)
+	response.HandleResponse(c, http.StatusOK, "Password reset successful", nil)
 }
 
 func ResendVerificationCodeViaEmail(c *gin.Context) {
