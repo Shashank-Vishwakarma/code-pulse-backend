@@ -16,14 +16,14 @@ func Authorization() gin.HandlerFunc {
 		token, err := c.Cookie(config.Config.JWT_TOKEN_COOKIE)
 		if err != nil {
 			logrus.Errorf("Error getting token: Authorization Middleware: %v", err)
-			response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+			response.HandleResponse(c, http.StatusNotFound, "Token not found", nil)
 			c.Abort()
 			return
 		}
 
 		if token == "" {
 			logrus.Error("Unauthorized: Token not found: Authorization Middleware")
-			response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+			response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized - Token not found", nil)
 			c.Abort()
 			return
 		}
