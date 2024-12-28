@@ -7,6 +7,7 @@ import (
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/queue"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/routes"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,7 +29,12 @@ func init() {
 func main() {
 	r := gin.Default()
 
-	// register middlewares
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"http://localhost:3000"}
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
+	corsConfig.AllowCredentials = true
+
+	r.Use(cors.New(corsConfig))
 
 	// register routes
 	routes.AuthRoutes(r)
