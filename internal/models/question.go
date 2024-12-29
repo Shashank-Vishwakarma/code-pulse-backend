@@ -21,6 +21,7 @@ const (
 
 	Python     Language = "Python"
 	JavaScript Language = "JavaScript"
+	Java       Language = "Java"
 	Cpp        Language = "C++"
 )
 
