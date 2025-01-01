@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/handlers"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/middlewares"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/constants"
@@ -12,7 +14,7 @@ func QuestionRoutes(r *gin.Engine) {
 
 	questionRouteGroup.Use(middlewares.Authorization())
 
-	questionRouteGroup.POST(constants.QUESTION_API_CREATE_ENDPOINT, handlers.CreateQuestion)
+	questionRouteGroup.POST(constants.QUESTION_API_CREATE_ENDPOINT, middlewares.RateLimiter(5, time.Hour), handlers.CreateQuestion)
 	questionRouteGroup.GET(constants.QUESTION_API_GET_ALL_ENDPOINT, handlers.GetAllQuestions)
 	questionRouteGroup.GET(constants.QUESTION_API_GET_BY_ID_ENDPOINT, handlers.GetQuestionById)
 	questionRouteGroup.PUT(constants.QUESTION_API_UPDATE_ENDPOINT, handlers.UpdateQuestion)

@@ -3,6 +3,8 @@ package middlewares
 import (
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/services"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/response"
@@ -27,7 +29,7 @@ func readUserIPAddress(c *gin.Context) (string, error) {
 	return IPAddress, nil
 }
 
-func RateLimiter() gin.HandlerFunc {
+func RateLimiter(noOfRequests int, duration time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		IPAddress, err := readUserIPAddress(c)
 		if err != nil {
@@ -37,27 +39,38 @@ func RateLimiter() gin.HandlerFunc {
 			return
 		}
 
-		cache, err := services.GetCache(IPAddress)
-		if err != nil {
-			logrus.Errorf("Error getting IP Address from cache: RateLimiter Middleware: %v", err)
-			response.HandleResponse(c, http.StatusInternalServerError, err.Error(), nil)
-			c.Abort()
-			return
-		}
+		cache := services.GetCache(IPAddress)
+		if cache == nil { // first request
+			err = services.SetCache(IPAddress, 1, duration)
+			if err != nil {
+				logrus.Errorf("Error setting cache: RateLimiter Middleware: %v", err)
+				response.HandleResponse(c, http.StatusInternalServerError, err.Error(), nil)
+				c.Abort()
+				return
+			}
+		} else {
+			cacheValue, err := strconv.Atoi(cache.(string))
+			if err != nil {
+				logrus.Errorf("Error converting cache value to int: RateLimiter Middleware: %v", err)
+				response.HandleResponse(c, http.StatusInternalServerError, err.Error(), nil)
+				c.Abort()
+				return
+			}
 
-		cacheValue, ok := cache.(int)
-		if !ok {
-			logrus.Error("Could not convert cache value to int: RateLimiter Middleware")
-			response.HandleResponse(c, http.StatusTooManyRequests, "Rate limit exceeded", nil)
-			c.Abort()
-			return
-		}
+			if cacheValue >= noOfRequests {
+				logrus.Error("Rate limit exceeded: RateLimiter Middleware")
+				response.HandleResponse(c, http.StatusTooManyRequests, "Rate limit exceeded: Please try again after 1 hour", nil)
+				c.Abort()
+				return
+			}
 
-		if cacheValue >= 30 {
-			logrus.Error("Rate limit exceeded: RateLimiter Middleware")
-			response.HandleResponse(c, http.StatusTooManyRequests, "Rate limit exceeded", nil)
-			c.Abort()
-			return
+			err = services.SetCache(IPAddress, fmt.Sprintf("%d", cacheValue+1), duration)
+			if err != nil {
+				logrus.Errorf("Error setting cache: RateLimiter Middleware: %v", err)
+				response.HandleResponse(c, http.StatusInternalServerError, err.Error(), nil)
+				c.Abort()
+				return
+			}
 		}
 
 		c.Next()

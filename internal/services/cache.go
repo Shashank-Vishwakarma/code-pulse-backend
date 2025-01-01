@@ -7,22 +7,33 @@ import (
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 )
 
 var RedisClient *redis.Client
 
 func InitializeRedis() {
-	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", config.Config.REDIS_ENDPOINT, config.Config.REDIS_PORT),
-		Password: config.Config.REDIS_PASSWORD,
-		DB:       0, // use default DB
+	client := redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%s:%s", config.Config.REDIS_ENDPOINT, config.Config.REDIS_PORT),
+		// Password:       config.Config.REDIS_PASSWORD,
+		DB: 2,
 	})
+
+	err := client.Ping(context.Background()).Err()
+	if err != nil {
+		logrus.Infof("Failed to connect to Redis: %v", err)
+		panic(err)
+	}
+
+	logrus.Println("Connected to Redis successfully")
+
+	RedisClient = client
 }
 
-func SetCache(key string, value string) error {
+func SetCache(key string, value interface{}, expiration time.Duration) error {
 	ctx := context.Background()
 
-	err := RedisClient.Set(ctx, key, value, time.Hour*24).Err()
+	err := RedisClient.Set(ctx, key, value, expiration).Err()
 	if err != nil {
 		return err
 	}
@@ -30,15 +41,15 @@ func SetCache(key string, value string) error {
 	return nil
 }
 
-func GetCache(key string) (interface{}, error) {
+func GetCache(key string) interface{} {
 	ctx := context.Background()
 
 	value, err := RedisClient.Get(ctx, key).Result()
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
-	return value, nil
+	return value
 }
 
 func InvalidateCache(key string) error {
