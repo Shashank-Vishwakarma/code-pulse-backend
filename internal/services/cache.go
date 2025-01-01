@@ -30,12 +30,12 @@ func SetCache(key string, value string) error {
 	return nil
 }
 
-func GetCache(key string) (string, error) {
+func GetCache(key string) (interface{}, error) {
 	ctx := context.Background()
 
 	value, err := RedisClient.Get(ctx, key).Result()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	return value, nil
