@@ -22,9 +22,9 @@ func InitializeRedis() {
 func SetCache(key string, value string) error {
 	ctx := context.Background()
 
-	result := RedisClient.Set(ctx, key, value, time.Hour*24)
-	if result.Err() != nil {
-		return result.Err()
+	err := RedisClient.Set(ctx, key, value, time.Hour*24).Err()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -44,9 +44,9 @@ func GetCache(key string) (string, error) {
 func InvalidateCache(key string) error {
 	ctx := context.Background()
 
-	result := RedisClient.Del(ctx, key)
-	if result.Err() != nil {
-		return result.Err()
+	err := RedisClient.Del(ctx, key).Err()
+	if err != nil {
+		return err
 	}
 
 	return nil
