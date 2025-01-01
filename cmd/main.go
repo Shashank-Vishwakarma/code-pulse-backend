@@ -39,6 +39,7 @@ func main() {
 
 	// register routes
 	routes.AuthRoutes(r)
+	routes.QuestionRoutes(r)
 
 	// rabbitmq setup
 	err := queue.InitializeRabbitMQ()

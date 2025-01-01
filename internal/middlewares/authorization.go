@@ -55,6 +55,7 @@ func Authorization() gin.HandlerFunc {
 		}
 
 		userData := utils.JWTPayload{
+			ID:       claims["id"].(string),
 			Name:     claims["name"].(string),
 			Email:    claims["email"].(string),
 			Username: claims["username"].(string),

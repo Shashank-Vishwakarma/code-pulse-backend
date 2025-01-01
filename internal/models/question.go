@@ -1,7 +1,15 @@
 package models
 
 import (
+	"context"
+	"strings"
 	"time"
+
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/constants"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Difficulty string
@@ -37,21 +45,43 @@ type CodeSnippet struct {
 }
 
 type Question struct {
-	ID                  string         `json:"id" bson:"_id,omitempty"`
-	Title               string         `json:"title" bson:"title" validate:"required"`
-	Slug                string         `json:"slug" bson:"slug" validate:"required"`
-	Description         string         `json:"description" bson:"description" validate:"required"`
-	Difficulty          Difficulty     `json:"difficulty" bson:"difficulty" validate:"required"`
-	Tags                []string       `json:"tags" bson:"tags"`
-	Companies           []string       `json:"companies,omitempty" bson:"companies,omitempty"`
-	Hints               []string       `json:"hints,omitempty" bson:"hints,omitempty"`
-	TestCases           []TestCase     `json:"testCases" bson:"testCases"`
-	CodeSnippets        []CodeSnippet  `json:"codeSnippets,omitempty" bson:"codeSnippets,omitempty"`
-	TotalSubmissions    int            `json:"totalSubmissions,omitempty" bson:"totalSubmissions,omitempty"`
-	Status              QuestionStatus `json:"status" bson:"status"`
-	IsQuestionPublished bool           `json:"isQuestionPublished" bson:"isQuestionPublished"`
-	Likes               []string       `json:"likes,omitempty" bson:"likes,omitempty"`
-	Dislikes            []string       `json:"dislikes,omitempty" bson:"dislikes,omitempty"`
-	AuthorID            string         `json:"authorId,omitempty" bson:"authorId,omitempty"`
-	CreatedAt           time.Time      `json:"createdAt" bson:"createdAt"`
+	ID           string         `json:"id" bson:"_id,omitempty"`
+	Title        string         `json:"title" bson:"title"`
+	Slug         string         `json:"slug" bson:"slug"`
+	Description  string         `json:"description" bson:"description"`
+	Difficulty   Difficulty     `json:"difficulty" bson:"difficulty"`
+	Tags         []string       `json:"tags" bson:"tags"`
+	Companies    []string       `json:"companies,omitempty" bson:"companies,omitempty"`
+	Hints        []string       `json:"hints,omitempty" bson:"hints,omitempty"`
+	TestCases    []TestCase     `json:"testCases" bson:"testCases"`
+	CodeSnippets []CodeSnippet  `json:"codeSnippets,omitempty" bson:"codeSnippets,omitempty"`
+	Status       QuestionStatus `json:"status" bson:"status"`
+	AuthorID     string         `json:"authorId,omitempty" bson:"authorId,omitempty"`
+	CreatedAt    time.Time      `json:"createdAt" bson:"createdAt"`
+}
+
+func CreateQuestion(q *Question) (*mongo.InsertOneResult, error) {
+	words := strings.Split(q.Title, " ")
+	slug := strings.Join(words, "-")
+
+	result, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).InsertOne(context.TODO(), bson.M{
+		"title":        q.Title,
+		"slug":         slug,
+		"description":  q.Description,
+		"difficulty":   q.Difficulty,
+		"tags":         q.Tags,
+		"companies":    q.Companies,
+		"hints":        q.Hints,
+		"testCases":    q.TestCases,
+		"codeSnippets": q.CodeSnippets,
+		"status":       Pending,
+		"authorId":     q.AuthorID,
+		"createdAt":    time.Now(),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

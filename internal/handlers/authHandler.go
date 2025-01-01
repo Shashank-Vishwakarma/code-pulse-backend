@@ -55,7 +55,7 @@ func Register(c *gin.Context) {
 		verificationCode := utils.GenerateVerificationCode()
 
 		// create the user
-		_, err := models.CreateUser(&models.User{
+		user, err := models.CreateUser(&models.User{
 			Name:             body.Name,
 			Username:         "",
 			Email:            body.Email,
@@ -77,6 +77,7 @@ func Register(c *gin.Context) {
 
 		// set jwt token in cookie
 		token, err := utils.GenerateToken(utils.JWTPayload{
+			ID:       user.InsertedID.(string),
 			Name:     body.Name,
 			Email:    body.Email,
 			Username: body.Username,
@@ -166,6 +167,7 @@ func Login(c *gin.Context) {
 
 	// set jwt token in cookie
 	token, err := utils.GenerateToken(utils.JWTPayload{
+		ID:       decodedUser.ID,
 		Name:     decodedUser.Name,
 		Email:    decodedUser.Email,
 		Username: decodedUser.Username,
@@ -244,17 +246,10 @@ func VerifyEmail(c *gin.Context) {
 	}
 
 	// get the data from context
-	userData, exists := c.Get(config.Config.JWT_DECODED_PAYLOAD)
-	if !exists {
-		logrus.Error("User data not found: VerifyEmail API")
-		response.HandleResponse(c, http.StatusBadRequest, "User data not found", nil)
-		return
-	}
-
-	decodedUser, ok := userData.(utils.JWTPayload)
-	if !ok {
-		logrus.Error("Invalid user data: VerifyEmail API")
-		response.HandleResponse(c, http.StatusBadRequest, "Invalid user data", nil)
+	decodedUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: VerifyEmail API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
 
