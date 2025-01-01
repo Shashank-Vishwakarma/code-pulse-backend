@@ -2,7 +2,9 @@ package constants
 
 const (
 	// Database
-	USER_COLLECTION = "users"
+	USER_COLLECTION     = "users"
+	QUESTION_COLLECTION = "questions"
+	BLOG_COLLECTION     = "blogs"
 
 	// Auth API Endpoints
 	AUTH_API_BASE_ENDPOINT                     = "/api/v1/auth"

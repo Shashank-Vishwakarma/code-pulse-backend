@@ -1,5 +1,8 @@
 package request
 
+import "github.com/Shashank-Vishwakarma/code-pulse-backend/internal/models"
+
+// Auth requests
 type RegisterRequest struct {
 	Name            string `json:"name" validate:"required,min=5,max=50"`
 	Username        string `json:"username" validate:"required,min=6,max=20"`
@@ -24,3 +27,18 @@ type ForgotPasswordRequest struct {
 	Password        string `json:"password" validate:"required,min=8,max=20"`
 	ConfirmPassword string `json:"confirmPassword" validate:"required,min=8,max=20"`
 }
+
+// Question requests
+type CreateQuestionRequest struct {
+	Title               string               `json:"title" validate:"required,min=5"`
+	Description         string               `json:"description" validate:"required"`
+	Difficulty          models.Difficulty    `json:"difficulty" validate:"required"`
+	Tags                []string             `json:"tags" validate:"required"`
+	Companies           []string             `json:"companies"`
+	Hints               []string             `json:"hints"`
+	TestCases           []models.TestCase    `json:"testCases" validate:"required"`
+	CodeSnippets        []models.CodeSnippet `json:"codeSnippets" validate:"required"`
+	IsQuestionPublished bool                 `json:"isQuestionPublished"`
+}
+
+// Blog requests

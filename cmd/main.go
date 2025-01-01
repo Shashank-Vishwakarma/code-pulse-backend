@@ -6,6 +6,7 @@ import (
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/queue"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/routes"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/services"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -51,6 +52,10 @@ func main() {
 		log.Fatalf("Failed to start the consumer: %v", err)
 	}
 
+	// Connect to redis
+	services.InitializeRedis()
+
+	// start the server
 	err = r.Run(":" + config.Config.PORT)
 	if err != nil {
 		log.Fatalf("Failed to start the server: %v", err)
