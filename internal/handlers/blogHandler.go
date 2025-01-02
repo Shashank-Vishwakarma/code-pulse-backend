@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -74,7 +75,32 @@ func GetAllBlogs(c *gin.Context) {
 	response.HandleResponse(c, http.StatusOK, "Blogs fetched successfully", blogs)
 }
 
-func GetBlogById(c *gin.Context) {}
+func GetBlogById(c *gin.Context) {
+	blogId := c.Param("id")
+
+	objectId, err := primitive.ObjectIDFromHex(blogId)
+	if err != nil {
+		logrus.Errorf("Invalid blog id: GetBlogById API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid blog id", nil)
+		return
+	}
+
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).FindOne(context.TODO(), bson.M{"_id": objectId})
+	if result.Err() != nil {
+		logrus.Errorf("Blog not found: GetBlogById API: %v", result.Err())
+		response.HandleResponse(c, http.StatusNotFound, "Blog not found", nil)
+		return
+	}
+
+	var blog models.Blog
+	if err := result.Decode(&blog); err != nil {
+		logrus.Errorf("Error decoding the blog: GetBlogById API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Blog fetched successfully", blog)
+}
 
 func UpdateBlog(c *gin.Context) {}
 
