@@ -82,4 +82,29 @@ func DeleteBlog(c *gin.Context) {}
 
 func SearchBlogs(c *gin.Context) {}
 
-func GetBlogsByUserId(c *gin.Context) {}
+func GetBlogsByUserId(c *gin.Context) {
+	// get the data from context
+	decodeUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: CreateBlog API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	options := options.Find().SetSort(bson.D{{"createdAt", -1}})
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Find(context.TODO(), bson.M{"authorId": decodeUser.ID}, options)
+	if err != nil {
+		logrus.Errorf("Error getting all blogs: GetAllBlogs API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var blogs []models.Blog
+	if err := cursor.All(context.TODO(), &blogs); err != nil {
+		logrus.Errorf("Error decoding the blogs: GetAllBlogs API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Blogs fetched successfully", blogs)
+}

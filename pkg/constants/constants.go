@@ -34,5 +34,5 @@ const (
 	BLOG_API_UPDATE_ENDPOINT         = "/:id"
 	BLOG_API_DELETE_ENDPOINT         = "/:id"
 	BLOG_API_SEARCH_ENDPOINT         = "/search"
-	BLOG_API_GET_BY_USER_ID_ENDPOINT = "/user/:id"
+	BLOG_API_GET_BY_USER_ID_ENDPOINT = "/user"
 )
