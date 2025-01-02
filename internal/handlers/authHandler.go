@@ -88,7 +88,7 @@ func Register(c *gin.Context) {
 			return
 		}
 
-		c.SetCookie(config.Config.JWT_TOKEN_COOKIE, token, 3600, "/", "localhost", false, true)
+		c.SetCookie(config.Config.JWT_TOKEN_COOKIE, token, 24*60*60, "/", "localhost", false, true)
 
 		responseData := struct {
 			Name     string `json:"name"`
@@ -178,7 +178,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(config.Config.JWT_TOKEN_COOKIE, token, time.Now().Hour()*24, "/", "", false, true)
+	c.SetCookie(config.Config.JWT_TOKEN_COOKIE, token, 24*60*60, "/", "", false, true)
 
 	responseData := struct {
 		Name     string `json:"name"`

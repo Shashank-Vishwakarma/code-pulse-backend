@@ -1,8 +1,15 @@
 package models
 
 import (
-	"math"
+	"context"
+	"strings"
 	"time"
+
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/constants"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Blog struct {
@@ -11,45 +18,29 @@ type Blog struct {
 	Body            string    `json:"body" bson:"body"`
 	IsBlogPublished bool      `json:"isBlogPublished" bson:"isBlogPublished"`
 	Slug            string    `json:"slug" bson:"slug"`
-	Comments        []Comment `json:"comments" bson:"comments"`
-	UpVotes         []string  `json:"upVotes" bson:"upVotes"`
-	DownVotes       []string  `json:"downVotes" bson:"downVotes"`
-	Score           float64   `json:"score" bson:"score"` // to track top 10 blogs
+	Comments        []Comment `json:"comments,omitempty" bson:"comments"`
+	UpVotes         []string  `json:"upVotes,omitempty" bson:"upVotes"`
+	DownVotes       []string  `json:"downVotes,omitempty" bson:"downVotes"`
 	AuthorID        string    `json:"authorId" bson:"authorId"`
 	CreatedAt       time.Time `json:"createdAt" bson:"createdAt"`
 }
 
-func (b *Blog) CalculateBlogScore() float64 {
-	// Calculate net votes
-	netVotes := len(b.UpVotes) - len(b.DownVotes)
+func CreateBlog(blog *Blog) (*mongo.InsertOneResult, error) {
+	words := strings.Split(blog.Title, " ")
+	slug := strings.Join(words, "-")
 
-	// percentage of downvotes
-	downvotesPercentage := float64(len(b.DownVotes)) / float64(len(b.UpVotes)+len(b.DownVotes))
-	if downvotesPercentage > 0.2 {
-		netVotes = 0
+	result, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).InsertOne(context.TODO(), bson.M{
+		"title":           blog.Title,
+		"body":            blog.Body,
+		"isBlogPublished": blog.IsBlogPublished,
+		"slug":            slug,
+		"authorId":        blog.AuthorID,
+		"createdAt":       time.Now(),
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	// Calculate vote score with logarithmic scaling to prevent vote count inflation
-	var voteScore float64
-	signedBit := math.Signbit(float64(netVotes))
-	if signedBit {
-		voteScore = math.Log1p(math.Abs(float64(netVotes)))
-	} else {
-		voteScore = 0
-	}
-
-	// Calculate recency score (blogs within last 30 days get higher scores)
-	daysSinceCreation := time.Since(b.CreatedAt).Hours() / 24
-	recencyScore := math.Max(0, 30-daysSinceCreation) / 30
-
-	// Calculate engagement score
-	commentScore := math.Log1p(float64(len(b.Comments)))
-
-	// Combine scores with weights
-	// Adjust these weights as needed
-	totalScore := voteScore*0.5 + recencyScore*0.3 + commentScore*0.2
-
-	// Normalize and round the score
-	b.Score = math.Round(totalScore*100) / 100
-	return b.Score
+	return result, nil
 }

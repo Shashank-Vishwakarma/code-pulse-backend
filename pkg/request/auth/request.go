@@ -42,3 +42,8 @@ type CreateQuestionRequest struct {
 }
 
 // Blog requests
+type CreateBlogRequest struct {
+	Title           string `json:"title" validate:"required,min=5"`
+	Body            string `json:"body" validate:"required"`
+	IsBlogPublished bool   `json:"isBlogPublished"`
+}
