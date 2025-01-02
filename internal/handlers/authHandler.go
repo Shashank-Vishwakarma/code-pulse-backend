@@ -138,7 +138,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	filter := bson.D{{"$or", bson.A{bson.D{{"email", body.Identifier}}, bson.D{{"username", body.Identifier}}}}}
+	filter := bson.D{{Key: "$or", Value: bson.A{bson.D{{Key: "email", Value: body.Identifier}}, bson.D{{Key: "username", Value: body.Identifier}}}}}
 	result := database.UserCollection.FindOne(context.TODO(), filter)
 	if result.Err() != nil {
 		logrus.Errorf("User not found: Login API: %v", result.Err())

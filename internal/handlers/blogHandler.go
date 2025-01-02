@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -106,7 +107,35 @@ func UpdateBlog(c *gin.Context) {}
 
 func DeleteBlog(c *gin.Context) {}
 
-func SearchBlogs(c *gin.Context) {}
+func SearchBlogs(c *gin.Context) {
+	query := c.Query("query")
+
+	searchStage := bson.D{
+		{Key: "$search", Value: bson.D{
+			{Key: "index", Value: "text"},
+			{Key: "text", Value: bson.D{
+				{Key: "query", Value: query},
+				{Key: "path", Value: "title"},
+			}},
+		}},
+	}
+
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Aggregate(context.TODO(), mongo.Pipeline{searchStage})
+	if err != nil {
+		logrus.Errorf("Error searching blogs: SearchBlogs API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var blogs []models.Blog
+	if err := cursor.All(context.TODO(), &blogs); err != nil {
+		logrus.Errorf("Error decoding the blogs: SearchBlogs API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Blogs fetched successfully", blogs)
+}
 
 func GetBlogsByUser(c *gin.Context) {
 	// get the data from context

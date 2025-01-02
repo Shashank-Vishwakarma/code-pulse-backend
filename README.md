@@ -58,6 +58,7 @@ Code Pulse is a comprehensive online learning platform designed to empower devel
      - Flexible schema design
      - Horizontal scalability
      - Supports complex queries and indexing
+     - Used Atlas Search for text search
 
 4. **Schema Validation**
    - **Go Validator**
