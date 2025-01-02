@@ -56,7 +56,7 @@ func CreateBlog(c *gin.Context) {
 }
 
 func GetAllBlogs(c *gin.Context) {
-	options := options.Find().SetSort(bson.D{{"createdAt", -1}})
+	options := options.Find().SetSort(bson.M{"createdAt": -1})
 	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Find(context.TODO(), bson.M{}, options)
 	if err != nil {
 		logrus.Errorf("Error getting all blogs: GetAllBlogs API: %v", err)
@@ -82,7 +82,7 @@ func DeleteBlog(c *gin.Context) {}
 
 func SearchBlogs(c *gin.Context) {}
 
-func GetBlogsByUserId(c *gin.Context) {
+func GetBlogsByUser(c *gin.Context) {
 	// get the data from context
 	decodeUser, err := utils.GetDecodedUserFromContext(c)
 	if err != nil {
@@ -91,7 +91,7 @@ func GetBlogsByUserId(c *gin.Context) {
 		return
 	}
 
-	options := options.Find().SetSort(bson.D{{"createdAt", -1}})
+	options := options.Find().SetSort(bson.M{"createdAt": -1})
 	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Find(context.TODO(), bson.M{"authorId": decodeUser.ID}, options)
 	if err != nil {
 		logrus.Errorf("Error getting all blogs: GetAllBlogs API: %v", err)

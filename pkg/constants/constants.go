@@ -25,6 +25,7 @@ const (
 	QUESTION_API_SEARCH_ENDPOINT            = "/search"
 	QUESTION_API_GET_BY_CATEGORY_ENDPOINT   = "/category/:category"
 	QUESTION_API_GET_BY_DIFFICULTY_ENDPOINT = "/difficulty/:difficulty"
+	QUESTION_API_GET_BY_USER_ENDPOINT       = "/user"
 
 	// Blog API Endpoints
 	BLOG_API_BASE_ENDPOINT           = "/api/v1/blogs"

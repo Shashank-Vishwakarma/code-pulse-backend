@@ -22,4 +22,5 @@ func QuestionRoutes(r *gin.Engine) {
 	questionRouteGroup.GET(constants.QUESTION_API_SEARCH_ENDPOINT, handlers.SearchQuestions)
 	questionRouteGroup.GET(constants.QUESTION_API_GET_BY_CATEGORY_ENDPOINT, handlers.GetQuestionsByCategory)
 	questionRouteGroup.GET(constants.QUESTION_API_GET_BY_DIFFICULTY_ENDPOINT, handlers.GetQuestionsByDifficulty)
+	questionRouteGroup.GET(constants.QUESTION_API_GET_BY_USER_ENDPOINT, handlers.GetQuestionsByUser)
 }
