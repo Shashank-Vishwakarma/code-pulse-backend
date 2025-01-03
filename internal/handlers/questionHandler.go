@@ -64,8 +64,33 @@ func CreateQuestion(c *gin.Context) {
 }
 
 func GetAllQuestions(c *gin.Context) {
-	options := options.Find().SetSort(bson.M{"createdAt": -1})
-	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).Find(context.TODO(), bson.M{}, options)
+	difficulty := c.Query("difficulty")
+	category := c.Query("category")
+
+	var filter interface{}
+
+	if difficulty != "" && category != "" {
+		filter = bson.M{
+			"difficulty": difficulty,
+			"tags": bson.M{
+				"$elemMatch": bson.M{"$eq": category},
+			},
+		}
+	} else if difficulty != "" {
+		filter = bson.M{
+			"difficulty": difficulty,
+		}
+	} else if category != "" {
+		filter = bson.M{
+			"tags": bson.M{
+				"$elemMatch": bson.M{"$eq": category},
+			},
+		}
+	} else {
+		filter = bson.M{}
+	}
+
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).Find(context.TODO(), filter)
 	if err != nil {
 		logrus.Errorf("Error getting all questions: GetAllQuestions API: %v", err)
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
@@ -225,28 +250,6 @@ func DeleteQuestion(c *gin.Context) {
 }
 
 func SearchQuestions(c *gin.Context) {}
-
-func GetQuestionsByCategory(c *gin.Context) {}
-
-func GetQuestionsByDifficulty(c *gin.Context) {
-	difficulty := c.Query("s")
-
-	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).Find(context.TODO(), bson.M{"difficulty": difficulty})
-	if err != nil {
-		logrus.Errorf("Error getting all questions: GetAllQuestions API: %v", err)
-		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
-		return
-	}
-
-	var result []models.Question
-	if err := cursor.All(context.TODO(), &result); err != nil {
-		logrus.Errorf("Error decoding the questions: GetAllQuestions API: %v", err)
-		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
-		return
-	}
-
-	response.HandleResponse(c, http.StatusOK, "Questions retrieved successfully", result)
-}
 
 func GetQuestionsByUser(c *gin.Context) {
 	// get the data from context
