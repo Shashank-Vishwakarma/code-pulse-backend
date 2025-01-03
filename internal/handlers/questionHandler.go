@@ -209,7 +209,24 @@ func UpdateQuestion(c *gin.Context) {
 	response.HandleResponse(c, http.StatusOK, "Question updated successfully", questionToUpdate)
 }
 
-func DeleteQuestion(c *gin.Context) {}
+func DeleteQuestion(c *gin.Context) {
+	id := c.Param("id")
+
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		logrus.Errorf("Invalid question id: DeleteQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid question id", nil)
+	}
+
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).FindOneAndDelete(context.TODO(), bson.M{"_id": objectId})
+	if result.Err() != nil {
+		logrus.Error("Question not found: DeleteQuestion API")
+		response.HandleResponse(c, http.StatusNotFound, "Question not found", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Question deleted successfully", nil)
+}
 
 func SearchQuestions(c *gin.Context) {}
 
