@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
-	"os"
 	"reflect"
 	"strings"
 
@@ -179,8 +177,6 @@ func UpdateQuestion(c *gin.Context) {
 		questionToUpdate.CodeSnippets = question.CodeSnippets
 	}
 
-	json.NewEncoder(os.Stdout).Encode(questionToUpdate)
-
 	updateStage := bson.M{
 		"$set": bson.M{
 			"title":        questionToUpdate.Title,
@@ -232,7 +228,25 @@ func SearchQuestions(c *gin.Context) {}
 
 func GetQuestionsByCategory(c *gin.Context) {}
 
-func GetQuestionsByDifficulty(c *gin.Context) {}
+func GetQuestionsByDifficulty(c *gin.Context) {
+	difficulty := c.Query("s")
+
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).Find(context.TODO(), bson.M{"difficulty": difficulty})
+	if err != nil {
+		logrus.Errorf("Error getting all questions: GetAllQuestions API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var result []models.Question
+	if err := cursor.All(context.TODO(), &result); err != nil {
+		logrus.Errorf("Error decoding the questions: GetAllQuestions API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Questions retrieved successfully", result)
+}
 
 func GetQuestionsByUser(c *gin.Context) {
 	// get the data from context
