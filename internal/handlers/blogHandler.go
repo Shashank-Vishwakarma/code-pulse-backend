@@ -16,7 +16,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -59,8 +58,22 @@ func CreateBlog(c *gin.Context) {
 }
 
 func GetAllBlogs(c *gin.Context) {
-	options := options.Find().SetSort(bson.M{"createdAt": -1})
-	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Find(context.TODO(), bson.M{}, options)
+	query := c.Query("q")
+
+	var filter interface{}
+
+	if query != "" {
+		filter = bson.M{
+			"title": bson.M{
+				"$regex":   query, // The substring you're looking for
+				"$options": "i",   // Makes the search case-insensitive (optional)
+			},
+		}
+	} else {
+		filter = bson.M{}
+	}
+
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Find(context.TODO(), filter)
 	if err != nil {
 		logrus.Errorf("Error getting all blogs: GetAllBlogs API: %v", err)
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
@@ -201,36 +214,6 @@ func DeleteBlog(c *gin.Context) {
 	}
 
 	response.HandleResponse(c, http.StatusOK, "Blog deleted successfully", nil)
-}
-
-func SearchBlogs(c *gin.Context) {
-	query := c.Query("query")
-
-	searchStage := bson.D{
-		{Key: "$search", Value: bson.D{
-			{Key: "index", Value: "text"},
-			{Key: "text", Value: bson.D{
-				{Key: "query", Value: query},
-				{Key: "path", Value: "title"},
-			}},
-		}},
-	}
-
-	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Aggregate(context.TODO(), mongo.Pipeline{searchStage})
-	if err != nil {
-		logrus.Errorf("Error searching blogs: SearchBlogs API: %v", err)
-		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
-		return
-	}
-
-	var blogs []models.Blog
-	if err := cursor.All(context.TODO(), &blogs); err != nil {
-		logrus.Errorf("Error decoding the blogs: SearchBlogs API: %v", err)
-		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
-		return
-	}
-
-	response.HandleResponse(c, http.StatusOK, "Blogs fetched successfully", blogs)
 }
 
 func GetBlogsByUser(c *gin.Context) {
