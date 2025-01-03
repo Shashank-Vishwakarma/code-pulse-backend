@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/models"
@@ -103,7 +104,84 @@ func GetBlogById(c *gin.Context) {
 	response.HandleResponse(c, http.StatusOK, "Blog fetched successfully", blog)
 }
 
-func UpdateBlog(c *gin.Context) {}
+func UpdateBlog(c *gin.Context) {
+	id := c.Param("id")
+
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		logrus.Errorf("Invalid blog id: UpdateBlog API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid blog id", nil)
+		return
+	}
+
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).FindOne(context.TODO(), bson.M{"_id": objectId})
+	if result.Err() != nil {
+		logrus.Errorf("Blog not found: UpdateBlog API: %v", result.Err())
+		response.HandleResponse(c, http.StatusNotFound, "Blog not found", nil)
+		return
+	}
+
+	var blogToUpdate models.Blog
+	if err := result.Decode(&blogToUpdate); err != nil {
+		logrus.Errorf("Error decoding the blog: UpdateBlog API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var blog request.UpdateBlogRequest
+	if err := c.ShouldBindJSON(&blog); err != nil {
+		logrus.Errorf("Invalid request body: UpdateBlog API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+
+	if blog.Title == "" && blog.Body == "" && blog.IsBlogPublished == blogToUpdate.IsBlogPublished {
+		logrus.Error("No fields to update: UpdateBlog API")
+		response.HandleResponse(c, http.StatusBadRequest, "No fields to update", nil)
+		return
+	}
+
+	if blog.Title != "" && blogToUpdate.Title != blog.Title {
+		blogToUpdate.Title = blog.Title
+
+		// change the slug
+		words := strings.Split(blog.Title, " ")
+		slug := strings.Join(words, "-")
+		blogToUpdate.Slug = slug
+	}
+
+	if blog.Body != "" && blogToUpdate.Body != blog.Body {
+		blogToUpdate.Body = blog.Body
+	}
+
+	if blog.IsBlogPublished != blogToUpdate.IsBlogPublished {
+		blogToUpdate.IsBlogPublished = blog.IsBlogPublished
+	}
+
+	updateStage := bson.M{
+		"$set": bson.M{
+			"title":           blogToUpdate.Title,
+			"body":            blogToUpdate.Body,
+			"isBlogPublished": blogToUpdate.IsBlogPublished,
+			"slug":            blogToUpdate.Slug,
+		},
+	}
+
+	res, updateErr := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).UpdateOne(context.TODO(), bson.M{"_id": objectId}, updateStage)
+	if updateErr != nil {
+		logrus.Errorf("Error updating blog: UpdateBlog API: %v", updateErr)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	if res.ModifiedCount == 0 {
+		logrus.Error("Did not update any fields: UpdateBlog API")
+		response.HandleResponse(c, http.StatusBadRequest, "Did not update any fields", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Blog updated successfully", nil)
+}
 
 func DeleteBlog(c *gin.Context) {}
 

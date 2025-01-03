@@ -47,3 +47,9 @@ type CreateBlogRequest struct {
 	Body            string `json:"body" validate:"required"`
 	IsBlogPublished bool   `json:"isBlogPublished"`
 }
+
+type UpdateBlogRequest struct {
+	Title           string `json:"title"`
+	Body            string `json:"body"`
+	IsBlogPublished bool   `json:"isBlogPublished"`
+}
