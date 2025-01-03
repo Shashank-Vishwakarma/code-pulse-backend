@@ -183,7 +183,25 @@ func UpdateBlog(c *gin.Context) {
 	response.HandleResponse(c, http.StatusOK, "Blog updated successfully", nil)
 }
 
-func DeleteBlog(c *gin.Context) {}
+func DeleteBlog(c *gin.Context) {
+	id := c.Param("id")
+
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		logrus.Errorf("Invalid blog id: DeleteBlog API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid blog id", nil)
+		return
+	}
+
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).FindOneAndDelete(context.TODO(), bson.M{"_id": objectId})
+	if result.Err() != nil {
+		logrus.Error("Blog not found: DeleteBlog API")
+		response.HandleResponse(c, http.StatusNotFound, "Blog not found", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Blog deleted successfully", nil)
+}
 
 func SearchBlogs(c *gin.Context) {
 	query := c.Query("query")
