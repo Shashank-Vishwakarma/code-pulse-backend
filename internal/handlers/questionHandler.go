@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -79,7 +80,32 @@ func GetAllQuestions(c *gin.Context) {
 	response.HandleResponse(c, http.StatusOK, "Questions retrieved successfully", result)
 }
 
-func GetQuestionById(c *gin.Context) {}
+func GetQuestionById(c *gin.Context) {
+	id := c.Param("id")
+
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		logrus.Errorf("Invalid question id: GetQuestionById API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid question id", nil)
+		return
+	}
+
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).FindOne(context.TODO(), bson.M{"_id": objectId})
+	if result.Err() != nil {
+		logrus.Errorf("Question not found: GetQuestionById API: %v", result.Err())
+		response.HandleResponse(c, http.StatusNotFound, "Question not found", nil)
+		return
+	}
+
+	var question models.Question
+	if err := result.Decode(&question); err != nil {
+		logrus.Errorf("Error decoding the question: GetQuestionById API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Question retrieved successfully", question)
+}
 
 func UpdateQuestion(c *gin.Context) {}
 
