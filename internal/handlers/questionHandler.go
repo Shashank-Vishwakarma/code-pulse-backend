@@ -66,28 +66,38 @@ func CreateQuestion(c *gin.Context) {
 func GetAllQuestions(c *gin.Context) {
 	difficulty := c.Query("difficulty")
 	category := c.Query("category")
+	q := c.Query("q")
 
 	var filter interface{}
 
-	if difficulty != "" && category != "" {
+	if q != "" {
 		filter = bson.M{
-			"difficulty": difficulty,
-			"tags": bson.M{
-				"$elemMatch": bson.M{"$eq": category},
-			},
-		}
-	} else if difficulty != "" {
-		filter = bson.M{
-			"difficulty": difficulty,
-		}
-	} else if category != "" {
-		filter = bson.M{
-			"tags": bson.M{
-				"$elemMatch": bson.M{"$eq": category},
+			"title": bson.M{
+				"$regex":   q,   // The substring you're looking for
+				"$options": "i", // Makes the search case-insensitive (optional)
 			},
 		}
 	} else {
-		filter = bson.M{}
+		if difficulty != "" && category != "" {
+			filter = bson.M{
+				"difficulty": difficulty,
+				"tags": bson.M{
+					"$elemMatch": bson.M{"$eq": category},
+				},
+			}
+		} else if difficulty != "" {
+			filter = bson.M{
+				"difficulty": difficulty,
+			}
+		} else if category != "" {
+			filter = bson.M{
+				"tags": bson.M{
+					"$elemMatch": bson.M{"$eq": category},
+				},
+			}
+		} else {
+			filter = bson.M{}
+		}
 	}
 
 	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).Find(context.TODO(), filter)
@@ -248,8 +258,6 @@ func DeleteQuestion(c *gin.Context) {
 
 	response.HandleResponse(c, http.StatusOK, "Question deleted successfully", nil)
 }
-
-func SearchQuestions(c *gin.Context) {}
 
 func GetQuestionsByUser(c *gin.Context) {
 	// get the data from context

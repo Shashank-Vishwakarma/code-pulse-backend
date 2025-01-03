@@ -19,6 +19,5 @@ func QuestionRoutes(r *gin.Engine) {
 	questionRouteGroup.GET(constants.QUESTION_API_GET_BY_ID_ENDPOINT, handlers.GetQuestionById)
 	questionRouteGroup.PUT(constants.QUESTION_API_UPDATE_ENDPOINT, handlers.UpdateQuestion)
 	questionRouteGroup.DELETE(constants.QUESTION_API_DELETE_ENDPOINT, handlers.DeleteQuestion)
-	questionRouteGroup.GET(constants.QUESTION_API_SEARCH_ENDPOINT, handlers.SearchQuestions)
 	questionRouteGroup.GET(constants.QUESTION_API_GET_BY_USER_ENDPOINT, handlers.GetQuestionsByUser)
 }

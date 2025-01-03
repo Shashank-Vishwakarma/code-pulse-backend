@@ -22,7 +22,6 @@ const (
 	QUESTION_API_GET_BY_ID_ENDPOINT   = "/:id"
 	QUESTION_API_UPDATE_ENDPOINT      = "/:id"
 	QUESTION_API_DELETE_ENDPOINT      = "/:id"
-	QUESTION_API_SEARCH_ENDPOINT      = "/search"
 	QUESTION_API_GET_BY_USER_ENDPOINT = "/user"
 
 	// Blog API Endpoints
