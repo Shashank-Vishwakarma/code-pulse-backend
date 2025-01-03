@@ -2,7 +2,11 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"os"
+	"reflect"
+	"strings"
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/models"
@@ -107,7 +111,103 @@ func GetQuestionById(c *gin.Context) {
 	response.HandleResponse(c, http.StatusOK, "Question retrieved successfully", question)
 }
 
-func UpdateQuestion(c *gin.Context) {}
+func UpdateQuestion(c *gin.Context) {
+	id := c.Param("id")
+
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		logrus.Errorf("Invalid question id: UpdateQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid question id", nil)
+		return
+	}
+
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).FindOne(context.TODO(), bson.M{"_id": objectId})
+	if result.Err() != nil {
+		logrus.Errorf("Question not found: UpdateQuestion API: %v", result.Err())
+		response.HandleResponse(c, http.StatusNotFound, "Question not found", nil)
+		return
+	}
+
+	var questionToUpdate models.Question
+	if err := result.Decode(&questionToUpdate); err != nil {
+		logrus.Errorf("Error decoding the question: UpdateQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var question request.UpdateQuestionRequest
+	if err := c.ShouldBindJSON(&question); err != nil {
+		logrus.Errorf("Invalid request body: UpdateQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+
+	if question.Title != "" && question.Title != questionToUpdate.Title {
+		questionToUpdate.Title = question.Title
+
+		// change the slug
+		words := strings.Split(question.Title, " ")
+		slug := strings.Join(words, "-")
+		questionToUpdate.Slug = slug
+	}
+
+	if question.Description != "" && question.Description != questionToUpdate.Description {
+		questionToUpdate.Description = question.Description
+	}
+
+	if question.Difficulty != "" && question.Difficulty != questionToUpdate.Difficulty {
+		questionToUpdate.Difficulty = question.Difficulty
+	}
+
+	if question.Tags != nil && !reflect.DeepEqual(question.Tags, questionToUpdate.Tags) {
+		questionToUpdate.Tags = question.Tags
+	}
+
+	if question.Companies != nil && !reflect.DeepEqual(question.Companies, questionToUpdate.Companies) {
+		questionToUpdate.Companies = question.Companies
+	}
+
+	if question.Hints != nil && !reflect.DeepEqual(question.Hints, questionToUpdate.Hints) {
+		questionToUpdate.Hints = question.Hints
+	}
+
+	if question.TestCases != nil && !reflect.DeepEqual(question.TestCases, questionToUpdate.TestCases) {
+		questionToUpdate.TestCases = question.TestCases
+	}
+
+	if question.CodeSnippets != nil && !reflect.DeepEqual(question.CodeSnippets, questionToUpdate.CodeSnippets) {
+		questionToUpdate.CodeSnippets = question.CodeSnippets
+	}
+
+	json.NewEncoder(os.Stdout).Encode(questionToUpdate)
+
+	updateStage := bson.M{
+		"$set": bson.M{
+			"title":        questionToUpdate.Title,
+			"description":  questionToUpdate.Description,
+			"difficulty":   questionToUpdate.Difficulty,
+			"tags":         questionToUpdate.Tags,
+			"companies":    questionToUpdate.Companies,
+			"hints":        questionToUpdate.Hints,
+			"testCases":    questionToUpdate.TestCases,
+			"codeSnippets": questionToUpdate.CodeSnippets,
+			"slug":         questionToUpdate.Slug,
+		},
+	}
+	res, updateErr := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).UpdateOne(context.TODO(), bson.M{"_id": objectId}, updateStage)
+	if updateErr != nil {
+		logrus.Errorf("Error updating question: UpdateQuestion API: %v", updateErr)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	if res.ModifiedCount == 0 {
+		response.HandleResponse(c, http.StatusOK, "No changes made", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Question updated successfully", questionToUpdate)
+}
 
 func DeleteQuestion(c *gin.Context) {}
 

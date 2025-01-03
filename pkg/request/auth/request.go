@@ -30,15 +30,25 @@ type ForgotPasswordRequest struct {
 
 // Question requests
 type CreateQuestionRequest struct {
-	Title               string               `json:"title" validate:"required,min=5"`
-	Description         string               `json:"description" validate:"required"`
-	Difficulty          models.Difficulty    `json:"difficulty" validate:"required"`
-	Tags                []string             `json:"tags" validate:"required"`
-	Companies           []string             `json:"companies"`
-	Hints               []string             `json:"hints"`
-	TestCases           []models.TestCase    `json:"testCases" validate:"required"`
-	CodeSnippets        []models.CodeSnippet `json:"codeSnippets" validate:"required"`
-	IsQuestionPublished bool                 `json:"isQuestionPublished"`
+	Title        string               `json:"title" validate:"required,min=5"`
+	Description  string               `json:"description" validate:"required"`
+	Difficulty   models.Difficulty    `json:"difficulty" validate:"required"`
+	Tags         []string             `json:"tags" validate:"required"`
+	Companies    []string             `json:"companies"`
+	Hints        []string             `json:"hints"`
+	TestCases    []models.TestCase    `json:"testCases" validate:"required"`
+	CodeSnippets []models.CodeSnippet `json:"codeSnippets" validate:"required"`
+}
+
+type UpdateQuestionRequest struct {
+	Title        string               `json:"title"`
+	Description  string               `json:"description"`
+	Difficulty   models.Difficulty    `json:"difficulty"`
+	Tags         []string             `json:"tags"`
+	Companies    []string             `json:"companies"`
+	Hints        []string             `json:"hints"`
+	TestCases    []models.TestCase    `json:"testCases"`
+	CodeSnippets []models.CodeSnippet `json:"codeSnippets"`
 }
 
 // Blog requests
