@@ -16,6 +16,7 @@ type Blog struct {
 	ID              string    `json:"id" bson:"_id"`
 	Title           string    `json:"title" bson:"title"`
 	Body            string    `json:"body" bson:"body"`
+	ImageURL        string    `json:"imageUrl" bson:"imageUrl"`
 	IsBlogPublished bool      `json:"isBlogPublished" bson:"isBlogPublished"`
 	Slug            string    `json:"slug" bson:"slug"`
 	Comments        []Comment `json:"comments,omitempty" bson:"comments"`
@@ -32,6 +33,7 @@ func CreateBlog(blog *Blog) (*mongo.InsertOneResult, error) {
 	result, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).InsertOne(context.TODO(), bson.M{
 		"title":           blog.Title,
 		"body":            blog.Body,
+		"imageUrl":        blog.ImageURL,
 		"isBlogPublished": blog.IsBlogPublished,
 		"slug":            slug,
 		"authorId":        blog.AuthorID,

@@ -35,6 +35,11 @@ type Env struct {
 	REDIS_PASSWORD string `mapstructure:"REDIS_PASSWORD"`
 	REDIS_PORT     string `mapstructure:"REDIS_PORT"`
 
+	// Cloudinary Configuration
+	CLOUDINARY_CLOUD_NAME string `mapstructure:"CLOUDINARY_CLOUD_NAME"`
+	CLOUDINARY_API_KEY    string `mapstructure:"CLOUDINARY_API_KEY"`
+	CLOUDINARY_API_SECRET string `mapstructure:"CLOUDINARY_API_SECRET"`
+
 	// Mode for golang
 	MODE string `mapstructure:"MODE"`
 }
@@ -55,22 +60,25 @@ func NewEnv() error {
 	}
 
 	envMap := map[string]string{
-		"PORT":             Config.PORT,
-		"DATABASE_URL":     Config.DATABASE_URL,
-		"DATABASE_NAME":    Config.DATABASE_NAME,
-		"JWT_TOKEN_COOKIE": Config.JWT_TOKEN_COOKIE,
-		"JWT_SECRET_KEY":   Config.JWT_SECRET_KEY,
-		"SMTP_HOST":        Config.SMTP_HOST,
-		"SMTP_PORT":        Config.SMTP_PORT,
-		"SMTP_USERNAME":    Config.SMTP_USERNAME,
-		"SMTP_PASSWORD":    Config.SMTP_PASSWORD,
-		"FROM_EMAIL":       Config.FROM_EMAIL,
-		"RABBITMQ_URL":     Config.RABBITMQ_URL,
-		"QUEUE_NAME":       Config.QUEUE_NAME,
-		"REDIS_ENDPOINT":   Config.REDIS_ENDPOINT,
-		"REDIS_PASSWORD":   Config.REDIS_PASSWORD,
-		"REDIS_PORT":       Config.REDIS_PORT,
-		"MODE":             Config.MODE,
+		"PORT":                  Config.PORT,
+		"DATABASE_URL":          Config.DATABASE_URL,
+		"DATABASE_NAME":         Config.DATABASE_NAME,
+		"JWT_TOKEN_COOKIE":      Config.JWT_TOKEN_COOKIE,
+		"JWT_SECRET_KEY":        Config.JWT_SECRET_KEY,
+		"SMTP_HOST":             Config.SMTP_HOST,
+		"SMTP_PORT":             Config.SMTP_PORT,
+		"SMTP_USERNAME":         Config.SMTP_USERNAME,
+		"SMTP_PASSWORD":         Config.SMTP_PASSWORD,
+		"FROM_EMAIL":            Config.FROM_EMAIL,
+		"RABBITMQ_URL":          Config.RABBITMQ_URL,
+		"QUEUE_NAME":            Config.QUEUE_NAME,
+		"REDIS_ENDPOINT":        Config.REDIS_ENDPOINT,
+		"REDIS_PASSWORD":        Config.REDIS_PASSWORD,
+		"REDIS_PORT":            Config.REDIS_PORT,
+		"CLOUDINARY_CLOUD_NAME": Config.CLOUDINARY_CLOUD_NAME,
+		"CLOUDINARY_API_KEY":    Config.CLOUDINARY_API_KEY,
+		"CLOUDINARY_API_SECRET": Config.CLOUDINARY_API_SECRET,
+		"MODE":                  Config.MODE,
 	}
 
 	for key, value := range envMap {

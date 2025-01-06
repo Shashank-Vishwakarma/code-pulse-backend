@@ -7,6 +7,7 @@ import (
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/models"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/services"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/constants"
 	request "github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/request/auth"
@@ -21,7 +22,7 @@ import (
 
 func CreateBlog(c *gin.Context) {
 	var body request.CreateBlogRequest
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if err := c.ShouldBind(&body); err != nil {
 		logrus.Errorf("Invalid request body: CreateBlog API: %v", err)
 		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
 		return
@@ -42,11 +43,44 @@ func CreateBlog(c *gin.Context) {
 		return
 	}
 
+	// get the image from the request
+	imageFile, err := c.FormFile("image")
+	if err != nil {
+		logrus.Errorf("Error getting image: CreateBlog API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Error getting image", nil)
+		return
+	}
+
+	// upload the image locally
+	err = c.SaveUploadedFile(imageFile, "./assets/uploads/"+imageFile.Filename)
+	if err != nil {
+		logrus.Errorf("Error uploading image: CreateBlog API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	// validate the image size and type
+	err = utils.ValidateImageFile(imageFile)
+	if err != nil {
+		logrus.Errorf("Error validating image: CreateBlog API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	relativeFilePath := "./assets/uploads/" + imageFile.Filename
+	imageUrl, err := services.UploadImageToCloudinary(relativeFilePath)
+	if err != nil {
+		logrus.Errorf("Error uploading image to cloudinary: CreateBlog API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
 	result, err := models.CreateBlog(&models.Blog{
 		Title:           body.Title,
 		Body:            body.Body,
 		IsBlogPublished: body.IsBlogPublished,
 		AuthorID:        decodeUser.ID,
+		ImageURL:        imageUrl,
 	})
 	if err != nil {
 		logrus.Errorf("Error creating blog: CreateBlog API: %v", err)

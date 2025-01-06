@@ -30,6 +30,8 @@ func init() {
 func main() {
 	r := gin.Default()
 
+	r.MaxMultipartMemory = 8 << 20 // 8 MiB
+
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"http://localhost:3000"}
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
