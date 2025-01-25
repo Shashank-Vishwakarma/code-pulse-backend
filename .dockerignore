@@ -1,0 +1,32 @@
+# Exclude the .env file
+.env
+
+# Exclude build and cache directories
+/build
+/cache
+/tmp
+
+# Exclude vendor directory if not needed
+/vendor
+
+# Exclude version control directories
+.git
+.gitignore
+.gitattributes
+
+# Exclude IDE/editor-specific files and directories
+*.idea
+*.vscode
+*.sublime-workspace
+*.sublime-project
+
+# Exclude operating system temporary files
+*.DS_Store
+*.swp
+*.lock
+*.log
+
+# Exclude test and coverage files
+/tests
+*.test
+*.out

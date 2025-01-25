@@ -19,15 +19,16 @@ services:
     volumes:
       - queue:/etc/rabbitmq
 
-  # app:
-  #   build:
-  #     context: ./Dockerfile
-  #   restart: always
-  #   ports:
-  #     - "8000:8000"
-  #   depends_on:
-  #     - cache
-  #     - queue
+  app:
+    build: . # build the image from defined Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - cache
+      - queue
 
 volumes:
   cache:
