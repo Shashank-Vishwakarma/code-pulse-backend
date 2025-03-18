@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/spf13/viper"
 )
 
 var Config *Env
@@ -43,56 +45,56 @@ type Env struct {
 }
 
 func NewEnv() error {
-	// path, _ := os.Getwd()
-	// os.Chdir(path + "/../config")
-	// viper.SetConfigFile(".env")
+	path, _ := os.Getwd()
+	os.Chdir(path + "/../config")
+	viper.SetConfigFile(".env")
 
-	// err := viper.ReadInConfig()
-	// if err != nil {
-	// 	return fmt.Errorf("can't find the environment file : %v", err)
-	// }
-
-	// err = viper.Unmarshal(&Config)
-	// if err != nil {
-	// 	return fmt.Errorf("environment can't be loaded: %v", err)
-	// }
-
-	Config = &Env{
-		PORT:                  os.Getenv("PORT"),
-		DATABASE_URL:          os.Getenv("DATABASE_URL"),
-		DATABASE_NAME:         os.Getenv("DATABASE_NAME"),
-		JWT_TOKEN_COOKIE:      os.Getenv("JWT_TOKEN_COOKIE"),
-		JWT_SECRET_KEY:        os.Getenv("JWT_SECRET_KEY"),
-		SMTP_HOST:             os.Getenv("SMTP_HOST"),
-		SMTP_PORT:             os.Getenv("SMTP_PORT"),
-		SMTP_USERNAME:         os.Getenv("SMTP_USERNAME"),
-		SMTP_PASSWORD:         os.Getenv("SMTP_PASSWORD"),
-		FROM_EMAIL:            os.Getenv("FROM_EMAIL"),
-		RABBITMQ_URL:          os.Getenv("RABBITMQ_URL"),
-		QUEUE_NAME:            os.Getenv("QUEUE_NAME"),
-		REDIS_ENDPOINT:        os.Getenv("REDIS_ENDPOINT"),
-		REDIS_PASSWORD:        os.Getenv("REDIS_PASSWORD"),
-		REDIS_PORT:            os.Getenv("REDIS_PORT"),
-		CLOUDINARY_CLOUD_NAME: os.Getenv("CLOUDINARY_CLOUD_NAME"),
-		CLOUDINARY_API_KEY:    os.Getenv("CLOUDINARY_API_KEY"),
-		CLOUDINARY_API_SECRET: os.Getenv("CLOUDINARY_API_SECRET"),
-		MODE:                  os.Getenv("MODE"),
+	err := viper.ReadInConfig()
+	if err != nil {
+		return fmt.Errorf("can't find the environment file : %v", err)
 	}
 
+	err = viper.Unmarshal(&Config)
+	if err != nil {
+		return fmt.Errorf("environment can't be loaded: %v", err)
+	}
+
+	// Config = &Env{
+	// 	PORT:                  os.Getenv("PORT"),
+	// 	DATABASE_URL:          os.Getenv("DATABASE_URL"),
+	// 	DATABASE_NAME:         os.Getenv("DATABASE_NAME"),
+	// 	JWT_TOKEN_COOKIE:      os.Getenv("JWT_TOKEN_COOKIE"),
+	// 	JWT_SECRET_KEY:        os.Getenv("JWT_SECRET_KEY"),
+	// 	SMTP_HOST:             os.Getenv("SMTP_HOST"),
+	// 	SMTP_PORT:             os.Getenv("SMTP_PORT"),
+	// 	SMTP_USERNAME:         os.Getenv("SMTP_USERNAME"),
+	// 	SMTP_PASSWORD:         os.Getenv("SMTP_PASSWORD"),
+	// 	FROM_EMAIL:            os.Getenv("FROM_EMAIL"),
+	// 	RABBITMQ_URL:          os.Getenv("RABBITMQ_URL"),
+	// 	QUEUE_NAME:            os.Getenv("QUEUE_NAME"),
+	// 	REDIS_ENDPOINT:        os.Getenv("REDIS_ENDPOINT"),
+	// 	REDIS_PASSWORD:        os.Getenv("REDIS_PASSWORD"),
+	// 	REDIS_PORT:            os.Getenv("REDIS_PORT"),
+	// 	CLOUDINARY_CLOUD_NAME: os.Getenv("CLOUDINARY_CLOUD_NAME"),
+	// 	CLOUDINARY_API_KEY:    os.Getenv("CLOUDINARY_API_KEY"),
+	// 	CLOUDINARY_API_SECRET: os.Getenv("CLOUDINARY_API_SECRET"),
+	// 	MODE:                  os.Getenv("MODE"),
+	// }
+
 	envMap := map[string]string{
-		"PORT":                  Config.PORT,
-		"DATABASE_URL":          Config.DATABASE_URL,
-		"DATABASE_NAME":         Config.DATABASE_NAME,
-		"JWT_TOKEN_COOKIE":      Config.JWT_TOKEN_COOKIE,
-		"JWT_SECRET_KEY":        Config.JWT_SECRET_KEY,
-		"SMTP_HOST":             Config.SMTP_HOST,
-		"SMTP_PORT":             Config.SMTP_PORT,
-		"SMTP_USERNAME":         Config.SMTP_USERNAME,
-		"SMTP_PASSWORD":         Config.SMTP_PASSWORD,
-		"FROM_EMAIL":            Config.FROM_EMAIL,
-		"RABBITMQ_URL":          Config.RABBITMQ_URL,
-		"QUEUE_NAME":            Config.QUEUE_NAME,
-		"REDIS_ENDPOINT":        Config.REDIS_ENDPOINT,
+		"PORT":             Config.PORT,
+		"DATABASE_URL":     Config.DATABASE_URL,
+		"DATABASE_NAME":    Config.DATABASE_NAME,
+		"JWT_TOKEN_COOKIE": Config.JWT_TOKEN_COOKIE,
+		"JWT_SECRET_KEY":   Config.JWT_SECRET_KEY,
+		"SMTP_HOST":        Config.SMTP_HOST,
+		"SMTP_PORT":        Config.SMTP_PORT,
+		"SMTP_USERNAME":    Config.SMTP_USERNAME,
+		"SMTP_PASSWORD":    Config.SMTP_PASSWORD,
+		"FROM_EMAIL":       Config.FROM_EMAIL,
+		"RABBITMQ_URL":     Config.RABBITMQ_URL,
+		"QUEUE_NAME":       Config.QUEUE_NAME,
+		"REDIS_ENDPOINT":   Config.REDIS_ENDPOINT,
 		"REDIS_PASSWORD":        Config.REDIS_PASSWORD,
 		"REDIS_PORT":            Config.REDIS_PORT,
 		"CLOUDINARY_CLOUD_NAME": Config.CLOUDINARY_CLOUD_NAME,
