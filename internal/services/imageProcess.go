@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func GenerateUid() string {
+func generateUid() string {
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		logrus.Errorf("Failed to generate UUID: %v", err)
@@ -32,7 +32,7 @@ func UploadImageToCloudinary(image string) (string, error) {
 		return "", err
 	}
 
-	result, err := cld.Upload.Upload(context.Background(), image, uploader.UploadParams{PublicID: "blog_image" + "-" + image + "-" + GenerateUid()})
+	result, err := cld.Upload.Upload(context.Background(), image, uploader.UploadParams{PublicID: "blog_image" + "-" + image + "-" + generateUid()})
 	if err != nil {
 		return "", err
 	}
