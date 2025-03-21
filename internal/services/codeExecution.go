@@ -13,6 +13,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
@@ -25,32 +26,76 @@ type Response struct {
 	TestCase string `json:"testcase"`
 }
 
-func cleanUpTempDir(dir string) {
-	os.Remove(dir)
-}
-
-func createDockerClient() (*client.Client, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+func cleanUpTempDir(dir string) error {
+	err := os.Remove(dir)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to delete temp dir %s: %w", dir, err)
 	}
-	defer cli.Close()
 
-	return cli, nil
+	return nil
 }
 
 func removeDockerContainer(client *client.Client, contID string) error {
+	// Remove the main container
 	err := client.ContainerRemove(context.Background(), contID, container.RemoveOptions{
 		Force: true,
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete main container %s: %w", contID, err)
+	}
+
+	// Remove containers which are left in "created" state
+	containers, err := client.ContainerList(context.Background(), container.ListOptions{
+		Filters: filters.NewArgs(
+			filters.Arg("status", "created"),
+		),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list created containers: %w", err)
+	}
+
+	// Loop and remove these containers
+	for _, cont := range containers {
+		err := client.ContainerRemove(context.Background(), cont.ID, container.RemoveOptions{
+			Force: true,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to delete container %s: %w", cont.ID, err)
+		}
+	}
+
+	return nil
 }
 
 func removeDockerImage(client *client.Client, imageName string) error {
+	// Remove the main image
 	_, err := client.ImageRemove(context.Background(), imageName, image.RemoveOptions{
 		Force: true,
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete main image %s: %w", imageName, err)
+	}
+
+	images, err := client.ImageList(context.Background(), image.ListOptions{
+		Filters: filters.NewArgs(
+			filters.Arg("dangling", "true"),
+		),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list dangling images: %w", err)
+	}
+
+	// Loop and remove each dangling image
+	for _, img := range images {
+		_, err := client.ImageRemove(context.Background(), img.ID, image.RemoveOptions{
+			Force: true,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to delete dangling image %s: %w", img.ID, err)
+		}
+	}
+
+	return nil
 }
 
 func getCodeFileName(language string) (string, error) {
@@ -260,6 +305,16 @@ func runContainer(client *client.Client, dir, dockerImageName, containerName, po
 	}
 
 	return string(output), nil
+}
+
+func createDockerClient() (*client.Client, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, err
+	}
+	defer cli.Close()
+
+	return cli, nil
 }
 
 func ExecuteCodeInDocker(language, code string) ([]Response, error) {
