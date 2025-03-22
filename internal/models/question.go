@@ -29,7 +29,6 @@ const (
 
 	Python     Language = "Python"
 	JavaScript Language = "JavaScript"
-	Cpp        Language = "C++"
 )
 
 type TestCase struct {

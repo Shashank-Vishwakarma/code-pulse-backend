@@ -104,8 +104,6 @@ func getCodeFileName(language string) (string, error) {
 	switch language {
 	case "python":
 		fileName = "main.py"
-	case "c++":
-		fileName = "main.cpp"
 	case "javascript":
 		fileName = "main.js"
 	default:
@@ -125,13 +123,6 @@ func getDockerfileContent(language string) (string, error) {
 			WORKDIR /app
 			COPY . /app
 			CMD ["python", "main.py"]
-			`
-	case "c++":
-		Dockerfile = `
-			FROM gcc:latest
-			WORKDIR /app
-			COPY . /app
-			CMD ["sh", "-c", "g++ -o main main.cpp && ./main"]
 			`
 	case "javascript":
 		Dockerfile = `
@@ -155,8 +146,6 @@ func getImageName(language string) string {
 	switch language {
 	case "python":
 		imageName = fmt.Sprintf("%s-%s-image", baseName, "python")
-	case "c++":
-		imageName = fmt.Sprintf("%s-%s-image", baseName, "cpp")
 	case "javascript":
 		imageName = fmt.Sprintf("%s-%s-image", baseName, "javascript")
 	default:
