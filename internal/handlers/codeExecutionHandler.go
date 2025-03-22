@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
@@ -68,28 +69,23 @@ func ExecuteQuestion(c *gin.Context) {
 	if body.Type == constants.RUN_QUESTION || body.Type == constants.SUBMIT_QUESTION {
 		message := "Question Run Successful!"
 
+		var codeSnippet string
+		for _, snippet := range question.CodeSnippets {
+			if strings.ToLower(string(snippet.Language)) == body.Language {
+				codeSnippet = strings.TrimSpace(snippet.Code)
+				break
+			}
+		}
+
+		// generate the code by replacing placeholders
+		code := utils.GenerateCodeTemplate(question.TestCases, body.Language, codeSnippet, body.Code)
+
 		// run the code for given language in its container
-		res, err := services.ExecuteCodeInDocker(body.Language, body.Code)
+		_, err := services.ExecuteCodeInDocker(body.Language, code)
 		if err != nil {
 			logrus.Errorf("Error running the code: ExecuteQuestion API: %v", err)
 			response.HandleResponse(c, http.StatusInternalServerError, err.Error(), nil)
 			return
-		}
-
-		// validate the output for each testCase
-		for i:=0; i<len(res); i++ {
-			originalOutput := question.TestCases[i].Output
-			codeOutput := res[i].Res
-
-			if originalOutput != codeOutput {
-				logrus.Errorf("Incorrect output obtained: ExecuteQuestion API: %v", err)
-				response.HandleResponse(c, http.StatusInternalServerError, "Wrong answer", services.Response{
-					Status: "failed",
-					Error: res[i].Error,
-					TestCase: question.TestCases[i].Input,
-				})
-				return
-			}
 		}
 
 		// create an entry into the database
@@ -109,16 +105,7 @@ func ExecuteQuestion(c *gin.Context) {
 			}
 		}
 
-		out := []services.Response{}
-		for _, v := range res {
-			out = append(out, services.Response{
-				Status: "success",
-				Error: v.Error,
-				TestCase: v.TestCase,
-			})
-		}
-
-		response.HandleResponse(c, http.StatusOK, message, out)
+		response.HandleResponse(c, http.StatusOK, message, nil)
 		return
 	} else {
 		logrus.Errorf("Invalid execution operation: RunQuestionHandler API: %v", nil)

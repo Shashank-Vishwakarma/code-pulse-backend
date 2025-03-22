@@ -7,12 +7,6 @@ Code Pulse is a comprehensive online learning platform designed to empower devel
 - Create a supportive environment for skill progression
 - Enable developers to track and visualize their coding journey
 
-**Why Code Pulse?**
-- Comprehensive DSA question bank with multiple difficulty levels
-- Real-time code evaluation and performance metrics
-- Personalized progress tracking
-- Integrated tech blog platform for theoretical and practical knowledge
-
 # Features
 
 1. **User Authentication & Management**
@@ -40,6 +34,9 @@ Code Pulse is a comprehensive online learning platform designed to empower devel
    - Create, read, and manage tech blog posts
    - Categorization of blogs by technology and topic
    - Commenting and interaction features
+
+6. **AI Quiz Generator**
+   - Generate quiz on coding topics such as sql, c++, go, etc using AI
 
 # Tech Stack
 
