@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -35,7 +37,9 @@ func ExecuteQuestion(c *gin.Context) {
 		return
 	}
 
-	objectId, err := primitive.ObjectIDFromHex(body.QuestionID)
+	questionId := c.Param("id")
+
+	objectId, err := primitive.ObjectIDFromHex(questionId)
 	if err != nil {
 		logrus.Errorf("Invalid question id: ExecuteQuestion API: %v", err)
 		response.HandleResponse(c, http.StatusBadRequest, "Invalid question id", nil)
@@ -78,10 +82,15 @@ func ExecuteQuestion(c *gin.Context) {
 		}
 
 		// generate the code by replacing placeholders
-		code := utils.GenerateCodeTemplate(question.TestCases, body.Language, codeSnippet, body.Code)
+		var code string
+		if body.Type == constants.RUN_QUESTION {
+			code = utils.GenerateCodeTemplate(question.TestCases[:2], body.Language, codeSnippet, body.Code)
+		} else if body.Type == constants.SUBMIT_QUESTION {
+			code = utils.GenerateCodeTemplate(question.TestCases, body.Language, codeSnippet, body.Code)
+		}
 
 		// run the code for given language in its container
-		_, err := services.ExecuteCodeInDocker(body.Language, code)
+		res, err := services.ExecuteCodeInDocker(body.Language, code)
 		if err != nil {
 			logrus.Errorf("Error running the code: ExecuteQuestion API: %v", err)
 			response.HandleResponse(c, http.StatusInternalServerError, err.Error(), nil)
@@ -93,7 +102,7 @@ func ExecuteQuestion(c *gin.Context) {
 			message = "Question Submission Successful!"
 
 			_, err := models.CreateSubmission(&models.QuestionSubmission{
-				QuestionID: body.QuestionID,
+				QuestionID: questionId,
 				UserID: decodeUser.ID,
 				Status: "success",
 				CreatedAt: time.Now(),
@@ -105,7 +114,16 @@ func ExecuteQuestion(c *gin.Context) {
 			}
 		}
 
-		response.HandleResponse(c, http.StatusOK, message, nil)
+		// convert res into proper format
+		cleanedData := strings.Trim(res, "\u0001\u0000\n")
+
+		var responses []services.Response
+		err = json.Unmarshal([]byte(cleanedData), &responses)
+		if err != nil {
+			log.Fatalf("Failed to unmarshal cleaned data: %v", err)
+		}
+
+		response.HandleResponse(c, http.StatusOK, message, responses)
 		return
 	} else {
 		logrus.Errorf("Invalid execution operation: RunQuestionHandler API: %v", nil)

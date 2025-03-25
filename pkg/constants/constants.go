@@ -39,5 +39,5 @@ const (
 	BLOG_API_GET_BY_USER_ID_ENDPOINT = "/user"
 
 	// Code Execution Endpoints
-	CODE_EXECUTION_API_BASE_ENDPOINT = "/api/v1/execute"
+	CODE_EXECUTION_API_BASE_ENDPOINT = "/api/v1/questions/:id/execute/"
 )

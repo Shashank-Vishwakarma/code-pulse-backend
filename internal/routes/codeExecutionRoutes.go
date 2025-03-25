@@ -8,9 +8,5 @@ import (
 )
 
 func CodeExecutionRoutes(r *gin.Engine) {
-	codeExecutionRouteGroup := r.Group(constants.CODE_EXECUTION_API_BASE_ENDPOINT)
-
-	codeExecutionRouteGroup.Use(middlewares.Authorization())
-
-	codeExecutionRouteGroup.POST("/", handlers.ExecuteQuestion)
+	r.POST(constants.CODE_EXECUTION_API_BASE_ENDPOINT, middlewares.Authorization(), handlers.ExecuteQuestion)
 }

@@ -6,8 +6,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -20,10 +20,10 @@ import (
 )
 
 type Response struct {
-	Status   string `json:"status"` // "passed" or "failed"
-	Error    string `json:"error,omitempty"`
-	Res      string `json:"res,omitempty"`
-	TestCase string `json:"testcase"`
+	Input string `json:"input,omitempty"`
+	Output      string `json:"output,omitempty"`
+	Expected string `json:"expected,omitempty"`
+	Result   bool   `json:"result,omitempty"`
 }
 
 func cleanUpTempDir(dir string) error {
@@ -212,7 +212,7 @@ func buildImageFromDockerfile(client *client.Client, tags []string, dockerfilePa
 	return nil
 }
 
-func runContainer(client *client.Client, dir, dockerImageName, containerName, port string, inputEnv []string) (string, error) {
+func runContainer(client *client.Client, dir, dockerImageName, containerName string) (string, error) {
 	// context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -295,44 +295,44 @@ func createDockerClient() (*client.Client, error) {
 	return cli, nil
 }
 
-func ExecuteCodeInDocker(language, code string) ([]Response, error) {
+func ExecuteCodeInDocker(language, code string) (string, error) {
 	// create a temporary dir to contain file and Dockerfile inside it
 	dir, err := os.MkdirTemp("", "code")
 	if err != nil {
-		return []Response{}, err
+		return "", err
 	}
 	defer cleanUpTempDir(dir)
 
 	// get code file name based on language
 	fileName, err := getCodeFileName(language)
 	if err != nil {
-		return []Response{}, err
+		return "", err
 	}
 
 	// write code in this file
 	filePath := fmt.Sprintf("%s/%s", dir, fileName)
 	err = os.WriteFile(filePath, []byte(code), 0744)
 	if err != nil {
-		return []Response{}, err
+		return "", err
 	}
 
 	// get dockerfile content based on language
 	dockerfileContent, err := getDockerfileContent(language)
 	if err != nil {
-		return []Response{}, err
+		return "", err
 	}
 
 	// write dockerfile in this dir
 	dockerfilePath := fmt.Sprintf("%s/Dockerfile", dir)
 	err = os.WriteFile(dockerfilePath, []byte(dockerfileContent), 0744)
 	if err != nil {
-		return []Response{}, err
+		return "", err
 	}
 
 	// create docker client
 	client, err := createDockerClient()
 	if err != nil {
-		return []Response{}, err
+		return "", err
 	}
 
 	// build Image from dockerfile
@@ -340,21 +340,30 @@ func ExecuteCodeInDocker(language, code string) ([]Response, error) {
 	tags := []string{dockerImageName}
 	err = buildImageFromDockerfile(client, tags, dockerfilePath)
 	if err != nil {
-		return []Response{}, err
+		return "", err
 	}
 
 	// run the container from image
 	containerName := strings.Replace(dockerImageName, "image", "container", 1)
-	containerOutput, err := runContainer(client, dir, dockerImageName, containerName, "8080", []string{})
+	containerOutput, err := runContainer(client, dir, dockerImageName, containerName)
 	if err != nil {
-		return []Response{}, err
+		return "", err
 	}
-	log.Printf("Container output: %s", containerOutput)
+
+	output := regexp.MustCompile(`�\[`).ReplaceAllString(containerOutput, "[")
+	output = regexp.MustCompile(`'`).ReplaceAllString(output, `"`)
+	output = regexp.MustCompile(`\b(True|False)\b`).ReplaceAllStringFunc(output, func(match string) string {
+		if match == "True" {
+			return "true"
+		}
+		return "false"
+	})
+	output = regexp.MustCompile(`"output": (\d+)`).ReplaceAllString(output, `"output": "$1"`)
 
 	err = removeDockerImage(client, dockerImageName)
 	if err != nil {
-		return []Response{}, err
+		return "", err
 	}
 
-	return []Response{}, nil
+	return output, nil
 }
