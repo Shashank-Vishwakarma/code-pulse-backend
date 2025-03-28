@@ -44,6 +44,7 @@ func main() {
 	routes.QuestionRoutes(r)
 	routes.BlogRoutes(r)
 	routes.CodeExecutionRoutes(r)
+	routes.ChallengeRoutes(r)
 
 	// rabbitmq setup
 	err := queue.InitializeRabbitMQ()

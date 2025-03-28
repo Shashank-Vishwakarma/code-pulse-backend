@@ -10,6 +10,7 @@ const (
 	QUESTION_COLLECTION        = "questions"
 	BLOG_COLLECTION            = "blogs"
 	CODE_SUBMISSION_COLLECTION = "submissions"
+	CHALLENGE_COLLECTION       = "challenges"
 
 	// Auth API Endpoints
 	AUTH_API_BASE_ENDPOINT                     = "/api/v1/auth"
@@ -45,7 +46,6 @@ const (
 	CHALLENGE_API_BASE_ENDPOINT               = "/api/v1/challenges"
 	CHALLENGE_API_CREATE_ENDPOINT             = "/create"
 	CHALLENGE_API_GET_BY_ID_ENDPOINT          = "/:id"
-	CHALLENGE_API_UPDATE_ENDPOINT             = "/:id"
 	CHALLENGE_API_DELETE_ENDPOINT             = "/:id"
-	CHALLENGE_API_GET_ALL_BY_USER_ID_ENDPOINT = "/user"
+	CHALLENGE_API_GET_ALL_BY_USER_ID_ENDPOINT = "/user/:userId"
 )

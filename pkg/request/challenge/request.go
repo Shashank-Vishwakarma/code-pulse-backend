@@ -1,5 +1,5 @@
 package challenge
 
-type QuizRequest struct {
-	Title string `json:"title" validate:"required"`
+type ChallengeRequest struct {
+	Topic string `json:"topic" validate:"required"`
 }
