@@ -40,6 +40,9 @@ type Env struct {
 	CLOUDINARY_API_KEY    string `mapstructure:"CLOUDINARY_API_KEY"`
 	CLOUDINARY_API_SECRET string `mapstructure:"CLOUDINARY_API_SECRET"`
 
+	// AI Configuration
+	GROQ_API_KEY string `mapstructure:"GROQ_API_KEY"`
+
 	// Mode for golang
 	MODE string `mapstructure:"MODE"`
 }
@@ -100,6 +103,7 @@ func NewEnv() error {
 		"CLOUDINARY_CLOUD_NAME": Config.CLOUDINARY_CLOUD_NAME,
 		"CLOUDINARY_API_KEY":    Config.CLOUDINARY_API_KEY,
 		"CLOUDINARY_API_SECRET": Config.CLOUDINARY_API_SECRET,
+		"GROQ_API_KEY": 	Config.GROQ_API_KEY,
 		"MODE":                  Config.MODE,
 	}
 
