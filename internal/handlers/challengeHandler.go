@@ -16,11 +16,32 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type QuestionData struct {
+	Question string   `bson:"question" json:"question"`
+	Options  []string `bson:"options" json:"options"`
+}
+
+type User struct {
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+type ChallengeData struct {
+	ID      primitive.ObjectID `bson:"_id" json:"id"`
+	Topic   string             `bson:"topic" json:"topic"`
+	Data    []QuestionData `bson:"data" json:"data"`
+	UserID    primitive.ObjectID    `bson:"user_id" json:"user_id"`
+	UserData  User           `bson:"user_data" json:"user_data"`
+	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+}
 
 func CreateChallenge(c *gin.Context) {
 	var body challenge.ChallengeRequest
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if err := c.ShouldBind(&body); err != nil {
 		logrus.Errorf("Invalid request body: CreateChallenge API: %v", err)
 		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
 		return
@@ -40,17 +61,26 @@ func CreateChallenge(c *gin.Context) {
 		return
 	}
 
-	aiResponse, err := utils.GenerateAIResponse(body.Topic)
+	aiResponse, err := utils.GenerateAIResponse(body.Topic, body.Difficulty)
 	if err != nil {
 		logrus.Errorf("Error generating AI response: CreateChallenge API: %v", err)
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
 
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Error converting user id to object id: CreateChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
 	// save to db
 	_, err = models.CreateChallenge(&models.Challenge{
+		Title: body.Title,
 		Topic: body.Topic,
-		UserID: decodeUser.ID,
+		Difficulty: body.Difficulty,
+		UserID: userObjectId,
 		Data: aiResponse.Questions,
 	})
 	if err != nil {
@@ -63,49 +93,7 @@ func CreateChallenge(c *gin.Context) {
 }
 
 func GetChallengeById(c *gin.Context) {
-	id := c.Param("id")
-
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		logrus.Errorf("Error getting challenge id from request: GetChallengeById API: %v", err)
-		response.HandleResponse(c, http.StatusBadRequest, "Invalid Challenge Id", nil)
-		return
-	}
-
-	var challenge struct {
-		ID      primitive.ObjectID `bson:"_id" json:"id"`
-		Topic   string             `bson:"topic" json:"topic"`
-		Data    []struct {
-			Question string   `bson:"question" json:"question"`
-			Options  []string `bson:"options" json:"options"`
-			// Exclude correct_answer from JSON response
-		} `bson:"data" json:"data"`
-		UserID    string    `bson:"user_id" json:"user_id"`
-		CreatedAt time.Time `bson:"created_at" json:"created_at"`
-	}
-
-	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).FindOne(context.Background(), bson.M{"_id": objectId})
-	err = result.Decode(&challenge)
-	if err != nil {
-		logrus.Errorf("Error decoding the challenge: %s: GetAllChallengesByUserId API: %v", id, err)
-		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
-		return
-	}
-
-	decodeUser, err := utils.GetDecodedUserFromContext(c)
-	if err != nil {
-		logrus.Errorf("Error getting decoded user: GetAllChallengesByUserId API: %v", err)
-		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
-		return
-	}
-
-	if decodeUser.ID != challenge.UserID {
-		logrus.Errorf("Unauthorized user: %s: GetAllChallengesByUserId API: %v", id, err)
-		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
-		return
-	}	
-
-	response.HandleResponse(c, http.StatusOK, "Fetched challenge successfully", challenge)
+	
 }
 
 func DeleteChallenge(c *gin.Context) {
@@ -113,21 +101,28 @@ func DeleteChallenge(c *gin.Context) {
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		logrus.Errorf("Error getting challenge id from request: GetChallengeById API: %v", err)
+		logrus.Errorf("Error getting challenge id from request: DeleteChallenge API: %v", err)
 		response.HandleResponse(c, http.StatusBadRequest, "Invalid Challenge Id", nil)
 		return
 	}
 	
 	decodeUser, err := utils.GetDecodedUserFromContext(c)
 	if err != nil {
-		logrus.Errorf("Error getting decoded user: GetAllChallengesByUserId API: %v", err)
+		logrus.Errorf("Error getting decoded user: DeleteChallenge API: %v", err)
 		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
 
-	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).FindOneAndDelete(context.Background(), bson.M{"_id": objectId, "user_id": decodeUser.ID})
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Error getting user id: DeleteChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).FindOneAndDelete(context.Background(), bson.M{"_id": objectId, "user_id": userObjectId})
 	if result.Err() != nil {
-		logrus.Errorf("Error deleting the challenge with id: %s: GetChallengeById API: %v", id, result.Err().Error())
+		logrus.Errorf("Error deleting the challenge with id: %s: DeleteChallenge API: %v", id, result.Err().Error())
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
@@ -151,14 +146,36 @@ func GetAllChallengesByUserId(c *gin.Context) {
 		return
 	}
 
-	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).Find(context.TODO(), bson.M{"user_id": userId})
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
 	if err != nil {
-		logrus.Errorf("Error getting the challenges for user id: %s: GetAllChallengesByUserId API: %v", userId, err)
+		logrus.Errorf("Error getting user id: GetAllChallengesByUserId API: %v", err)
 		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
 
-	var challenges []models.Challenge
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.M{"user_id": userObjectId}}}, // Exclude specific user_id
+		{{"$lookup", bson.M{
+			"from":         "users",       // Name of the users collection
+			"localField":   "user_id",     // Field in the challenges collection
+			"foreignField": "_id",         // Field in the users collection
+			"as":           "user_data",  // Output array field for user data
+		}}},
+		{{"$unwind", bson.M{"path": "$user_data", "preserveNullAndEmptyArrays": true}}}, // Flatten user_data array
+		{{"$project", bson.M{
+			"user_data.password": 0,   // Exclude password from user data
+			"user_data._id":      0,   // Optional: Exclude MongoDB's _id field for user data
+		}}},
+	}
+
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		logrus.Errorf("Error getting the challenges for all users execpt user id: %s: GetAllChallengesByUserId API: %v", decodeUser.ID, err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
+	var challenges []ChallengeData
 	err = cursor.All(context.TODO(), &challenges)
 	if err != nil {
 		logrus.Errorf("Error getting challenges for user id: %s: GetAllChallengesByUserId API: %v", userId, err)
@@ -166,19 +183,54 @@ func GetAllChallengesByUserId(c *gin.Context) {
 		return
 	}
 
-	var resData struct{
-		Topics interface{} `json:"topics"`
+	response.HandleResponse(c, http.StatusOK, "Fetched challenges successfully", challenges)
+}
+
+// get all challenges except for current user
+func GetAllChallenges(c *gin.Context) {
+	decodeUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: GetAllChallenges API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
 	}
 
-	topics := []map[string]string{}
-	for _, challenge := range challenges {
-		topics = append(topics, map[string]string{
-			"id": challenge.ID,
-			"topic": challenge.Topic,
-		})
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Error getting user id: GetAllChallenges API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
 	}
 
-	resData.Topics = topics
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.M{"user_id": bson.M{"$ne": userObjectId}}}}, // Exclude specific user_id
+		{{"$lookup", bson.M{
+			"from":         "users",       // Name of the users collection
+			"localField":   "user_id",     // Field in the challenges collection
+			"foreignField": "_id",         // Field in the users collection
+			"as":           "user_data",  // Output array field for user data
+		}}},
+		{{"$unwind", bson.M{"path": "$user_data", "preserveNullAndEmptyArrays": true}}}, // Flatten user_data array
+		{{"$project", bson.M{
+			"user_data.password": 0,   // Exclude password from user data
+			"user_data._id":      0,   // Optional: Exclude MongoDB's _id field for user data
+		}}},
+	}
 
-	response.HandleResponse(c, http.StatusOK, "Fetched challenges successfully", resData)
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		logrus.Errorf("Error getting the challenges for all users execpt user id: %s: GetAllChallenges API: %v", decodeUser.ID, err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
+	var challenges []ChallengeData
+	err = cursor.All(context.TODO(), &challenges)
+	if err != nil {
+		logrus.Errorf("Error decoding challenges: GetAllChallenges API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Fetched challenges successfully", challenges)
 }
