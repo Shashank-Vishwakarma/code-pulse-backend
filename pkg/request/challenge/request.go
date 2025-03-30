@@ -1,5 +1,7 @@
 package challenge
 
 type ChallengeRequest struct {
-	Topic string `json:"topic" validate:"required"`
+	Title      string `form:"title" validate:"required,min=5"`
+	Topic      string `form:"topic" validate:"required"`
+	Difficulty string `form:"difficulty" validate:"required"`
 }

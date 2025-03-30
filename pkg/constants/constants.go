@@ -44,6 +44,7 @@ const (
 
 	// Quiz API Endpoints
 	CHALLENGE_API_BASE_ENDPOINT               = "/api/v1/challenges"
+	CHALLENGE_API_ALL_CHALLENGES_ENDPOINT     = "/all"
 	CHALLENGE_API_CREATE_ENDPOINT             = "/create"
 	CHALLENGE_API_GET_BY_ID_ENDPOINT          = "/:id"
 	CHALLENGE_API_DELETE_ENDPOINT             = "/:id"

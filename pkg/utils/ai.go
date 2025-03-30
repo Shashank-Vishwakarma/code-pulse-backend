@@ -16,6 +16,8 @@ import (
 var prompt = `
 Generate 10 multiple-choice questions on the topic: %s. 
 
+The difficulty level of this challenge should be %s.
+
 Each question should include:
 1. A clear and concise question statement.
 2. Four answer options.
@@ -80,8 +82,8 @@ type Usage struct {
 	TotalTime        float64 `json:"total_time"`
 }
 
-func GenerateAIResponse(topic string) (AIResponse, error) {
-	prompt = fmt.Sprintf(prompt, topic)
+func GenerateAIResponse(topic, difficulty string) (AIResponse, error) {
+	prompt = fmt.Sprintf(prompt, topic, difficulty)
 
 	payload := map[string]interface{}{
 		"model": "llama-3.3-70b-versatile",

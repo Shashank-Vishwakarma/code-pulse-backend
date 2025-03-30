@@ -12,6 +12,7 @@ func ChallengeRoutes(r *gin.Engine) {
 
 	challengeRouteGroup.Use(middlewares.Authorization())
 
+	challengeRouteGroup.GET(constants.CHALLENGE_API_ALL_CHALLENGES_ENDPOINT, handlers.GetAllChallenges)
 	challengeRouteGroup.GET(constants.CHALLENGE_API_GET_BY_ID_ENDPOINT, handlers.GetChallengeById)
 	challengeRouteGroup.GET(constants.CHALLENGE_API_GET_ALL_BY_USER_ID_ENDPOINT, handlers.GetAllChallengesByUserId)
 	challengeRouteGroup.POST(constants.CHALLENGE_API_CREATE_ENDPOINT, handlers.CreateChallenge)

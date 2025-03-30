@@ -8,6 +8,7 @@ import (
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/constants"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -19,9 +20,11 @@ type ChallegeQuestion struct {
 
 type Challenge struct {
 	ID        string          `json:"id" bson:"_id"`
+	Title string 	`json:"title" bson:"title"`
 	Topic     string          `json:"topic" bson:"topic"`
+	Difficulty string		  `json:"difficulty" bson:"difficulty"`
 	Data      []ChallegeQuestion `json:"data" bson:"data"`
-	UserID    string          `json:"user_id" bson:"user_id"`
+	UserID    primitive.ObjectID          `json:"user_id" bson:"user_id"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 }
 
