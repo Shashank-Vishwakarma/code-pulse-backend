@@ -36,6 +36,7 @@ type ChallengeData struct {
 	Topic   string             `bson:"topic" json:"topic"`
 	Difficulty string             `bson:"difficulty" json:"difficulty"`
 	Data    []QuestionData `bson:"data" json:"data"`
+	Score string `bson:"score" json:"score"`
 	UserID    primitive.ObjectID    `bson:"user_id" json:"user_id"`
 	UserData  User           `bson:"user_data" json:"user_data"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
@@ -280,4 +281,74 @@ func GetAllChallenges(c *gin.Context) {
 	}
 
 	response.HandleResponse(c, http.StatusOK, "Fetched challenges successfully", challenges)
+}
+
+func SubmitChallenge(c *gin.Context) {
+	id := c.Param("id")
+
+	challengeObjectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		logrus.Errorf("Error converting the challenge id to object id: SubmitChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+
+	var body challenge.SubmitChallengeRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
+		logrus.Errorf("Error binding request body: SubmitChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+
+	err = utils.ValidateRequest(body)
+	if err != nil {
+		logrus.Errorf("Error validating the request body: SubmitChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+
+	// check if challenge with this id exist
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).FindOne(
+		context.TODO(),
+		bson.M{
+			"_id": challengeObjectId,
+		},
+	)
+
+	if result.Err() != nil {
+		logrus.Errorf("Challenge not found: SubmitChallenge API: %v", result.Err())
+		response.HandleResponse(c, http.StatusNotFound, "Challenge not found", nil)
+		return
+	}
+
+	var challenge models.Challenge
+	err = result.Decode(&challenge)
+	if err != nil {
+		logrus.Errorf("Error decoding challenge: SubmitChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	score := utils.CalculateChallengeScore(body.Answers, challenge.Data)
+
+	// update the challenge score
+	_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).UpdateOne(
+		context.TODO(),
+		bson.M{
+			"_id": challengeObjectId,
+		},
+		bson.M{
+			"$set": bson.M{
+				"score": score,
+				"user_selected_answers": body.Answers,
+			},
+		},
+	)
+	if err != nil {
+		logrus.Errorf("Error updating challenge score: SubmitChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Challenge submitted successfully", score)
 }

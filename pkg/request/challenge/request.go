@@ -5,3 +5,7 @@ type ChallengeRequest struct {
 	Topic      string `form:"topic" validate:"required"`
 	Difficulty string `form:"difficulty" validate:"required"`
 }
+
+type SubmitChallengeRequest struct {
+	Answers []map[string]string `json:"answers" validate:"required"`
+}

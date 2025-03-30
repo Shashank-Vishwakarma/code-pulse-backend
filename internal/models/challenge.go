@@ -24,6 +24,8 @@ type Challenge struct {
 	Topic     string          `json:"topic" bson:"topic"`
 	Difficulty string		  `json:"difficulty" bson:"difficulty"`
 	Data      []ChallegeQuestion `json:"data" bson:"data"`
+	Score string `json:"score" bson:"score"`
+	UserSelectedAnswers []map[string]string `json:"user_selected_answers" bson:"user_selected_answers"`
 	UserID    primitive.ObjectID          `json:"user_id" bson:"user_id"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 }
