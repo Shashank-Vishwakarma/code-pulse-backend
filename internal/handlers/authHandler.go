@@ -91,10 +91,12 @@ func Register(c *gin.Context) {
 		c.SetCookie(config.Config.JWT_TOKEN_COOKIE, token, 24*60*60, "/", "localhost", false, true)
 
 		responseData := struct {
+			ID       string `json:"id"`
 			Name     string `json:"name"`
 			Email    string `json:"email"`
 			Username string `json:"username"`
 		}{
+			ID:       user.InsertedID.(string),
 			Name:     body.Name,
 			Email:    body.Email,
 			Username: body.Username,
@@ -181,10 +183,12 @@ func Login(c *gin.Context) {
 	c.SetCookie(config.Config.JWT_TOKEN_COOKIE, token, 24*60*60, "/", "", false, true)
 
 	responseData := struct {
+		ID       string `json:"id"`
 		Name     string `json:"name"`
 		Email    string `json:"email"`
 		Username string `json:"username"`
 	}{
+		ID:       decodedUser.ID,
 		Name:     decodedUser.Name,
 		Email:    decodedUser.Email,
 		Username: decodedUser.Username,
