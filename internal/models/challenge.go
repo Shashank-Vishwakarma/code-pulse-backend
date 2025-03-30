@@ -30,7 +30,9 @@ type Challenge struct {
 
 func CreateChallenge(challenge *Challenge) (*mongo.InsertOneResult, error) {
 	result, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).InsertOne(context.TODO(), &bson.M{
+		"title": challenge.Title,
 		"topic": challenge.Topic,
+		"difficulty": challenge.Difficulty,
 		"data": challenge.Data,
 		"user_id": challenge.UserID,
 		"created_at": time.Now(),

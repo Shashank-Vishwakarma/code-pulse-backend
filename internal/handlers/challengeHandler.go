@@ -32,7 +32,9 @@ type User struct {
 
 type ChallengeData struct {
 	ID      primitive.ObjectID `bson:"_id" json:"id"`
+	Title   string             `bson:"title" json:"title"`
 	Topic   string             `bson:"topic" json:"topic"`
+	Difficulty string             `bson:"difficulty" json:"difficulty"`
 	Data    []QuestionData `bson:"data" json:"data"`
 	UserID    primitive.ObjectID    `bson:"user_id" json:"user_id"`
 	UserData  User           `bson:"user_data" json:"user_data"`
