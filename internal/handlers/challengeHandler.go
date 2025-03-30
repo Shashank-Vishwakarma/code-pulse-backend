@@ -95,7 +95,52 @@ func CreateChallenge(c *gin.Context) {
 }
 
 func GetChallengeById(c *gin.Context) {
-	
+	challengeId := c.Param("id")
+
+	challengeObjectId, err := primitive.ObjectIDFromHex(challengeId)
+	if err != nil {
+		logrus.Errorf("Error getting challenge id from request: GetChallengeById API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid Challenge Id", nil)
+		return
+	}
+
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.M{"_id": challengeObjectId}}}, // Exclude specific user_id
+		{{"$lookup", bson.M{
+			"from":         "users",       // Name of the users collection
+			"localField":   "user_id",     // Field in the challenges collection
+			"foreignField": "_id",         // Field in the users collection
+			"as":           "user_data",  // Output array field for user data
+		}}},
+		{{"$unwind", bson.M{"path": "$user_data", "preserveNullAndEmptyArrays": true}}}, // Flatten user_data array
+		{{"$project", bson.M{
+			"user_data.password": 0,   // Exclude password from user data
+			"user_data._id":      0,   // Optional: Exclude MongoDB's _id field for user data
+		}}},
+	}
+
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		logrus.Errorf("Error getting the challenges for id: %s: GetChallengeById API: %v",challengeId, err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
+	var challenges []ChallengeData
+	err = cursor.All(context.TODO(), &challenges)
+	if err != nil {
+		logrus.Errorf("Error getting challenges for id: %s: GetChallengeById API: %v", challengeId, err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Internal server error", nil)
+		return
+	}
+
+	if len(challenges) == 0 {
+		logrus.Errorf("Challenge not found for id: %s: GetChallengeById API", challengeId)
+		response.HandleResponse(c, http.StatusNotFound, "Challenge not found", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Success", challenges[0])
 }
 
 func DeleteChallenge(c *gin.Context) {
