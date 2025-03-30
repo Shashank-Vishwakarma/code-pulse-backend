@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func Register(c *gin.Context) {
@@ -75,9 +76,18 @@ func Register(c *gin.Context) {
 			Code:     verificationCode,
 		})
 
+		ID := ""
+		if oid, ok := user.InsertedID.(primitive.ObjectID); ok {
+			ID = oid.Hex()
+		} else {
+			logrus.Errorf("InsertedID is not a valid ObjectID: Register API: %v", err)
+			response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+			return
+		}
+
 		// set jwt token in cookie
 		token, err := utils.GenerateToken(utils.JWTPayload{
-			ID:       user.InsertedID.(string),
+			ID:       ID,
 			Name:     body.Name,
 			Email:    body.Email,
 			Username: body.Username,
@@ -96,7 +106,7 @@ func Register(c *gin.Context) {
 			Email    string `json:"email"`
 			Username string `json:"username"`
 		}{
-			ID:       user.InsertedID.(string),
+			ID:       ID,
 			Name:     body.Name,
 			Email:    body.Email,
 			Username: body.Username,
