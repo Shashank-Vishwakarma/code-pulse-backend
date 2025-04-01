@@ -12,10 +12,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type UserSelectedAnswer struct {
+	Question string `json:"question" bson:"question"`
+	Answer string `json:"answer" bson:"answer"`
+}
+
 type ChallegeQuestion struct {
-	Question string `json:"question"`
-	Options []string `json:"options"`
-	CorrectAnswer string `json:"correct_answer"`
+	Question string `json:"question" bson:"question"`
+	Options []string `json:"options" bson:"options"`
+	CorrectAnswer string `json:"correct_answer" bson:"correct_answer"`
 }
 
 type Challenge struct {
@@ -25,7 +30,7 @@ type Challenge struct {
 	Difficulty string		  `json:"difficulty" bson:"difficulty"`
 	Data      []ChallegeQuestion `json:"data" bson:"data"`
 	Score string `json:"score" bson:"score"`
-	UserSelectedAnswers []map[string]string `json:"user_selected_answers" bson:"user_selected_answers"`
+	UserSelectedAnswers []UserSelectedAnswer `json:"user_selected_answers" bson:"user_selected_answers"`
 	UserID    primitive.ObjectID          `json:"user_id" bson:"user_id"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 }

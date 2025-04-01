@@ -352,3 +352,66 @@ func SubmitChallenge(c *gin.Context) {
 
 	response.HandleResponse(c, http.StatusOK, "Challenge submitted successfully", score)
 }
+
+func GetCorrectAnswersForChallenge(c *gin.Context) {
+	challengeId := c.Param("id")
+
+	challengeObjectId, err := primitive.ObjectIDFromHex(challengeId)
+	if err != nil {
+		logrus.Errorf("Error getting challenge id from request: GetCorrectAnswersForChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid Challenge Id", nil)
+		return
+	}
+
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.M{"_id": challengeObjectId}}}, // Exclude specific user_id
+		{{"$lookup", bson.M{
+			"from":         "users",       // Name of the users collection
+			"localField":   "user_id",     // Field in the challenges collection
+			"foreignField": "_id",         // Field in the users collection
+			"as":           "user_data",  // Output array field for user data
+		}}},
+		{{"$unwind", bson.M{"path": "$user_data", "preserveNullAndEmptyArrays": true}}}, // Flatten user_data array
+		{{"$project", bson.M{
+			"user_data.password": 0,   // Exclude password from user data
+			"user_data._id":      0,   // Optional: Exclude MongoDB's _id field for user data
+		}}},
+	}
+
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		logrus.Errorf("Error getting the challenges for id: %s: GetCorrectAnswersForChallenge API: %v",challengeId, err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
+	var challenges []struct {
+		ID      primitive.ObjectID `bson:"_id" json:"id"`
+		Title   string             `bson:"title" json:"title"`
+		Topic   string             `bson:"topic" json:"topic"`
+		Difficulty string             `bson:"difficulty" json:"difficulty"`
+		Data    []struct {
+			Question string   `bson:"question" json:"question"`
+			Options  []string `bson:"options" json:"options"`
+			CorrectAnswer string `bson:"correct_answer" json:"correct_answer"`
+		} `bson:"data" json:"data"`
+		Score string `bson:"score" json:"score"`
+		UserID    primitive.ObjectID    `bson:"user_id" json:"user_id"`
+		UserData  User           `bson:"user_data" json:"user_data"`
+		CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	}
+	err = cursor.All(context.TODO(), &challenges)
+	if err != nil {
+		logrus.Errorf("Error getting challenges for id: %s: GetCorrectAnswersForChallenge API: %v", challengeId, err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Internal server error", nil)
+		return
+	}
+
+	if len(challenges) == 0 {
+		logrus.Errorf("Challenge not found for id: %s: GetCorrectAnswersForChallenge API", challengeId)
+		response.HandleResponse(c, http.StatusNotFound, "Challenge not found", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Success", challenges[0])
+}

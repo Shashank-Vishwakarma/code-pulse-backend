@@ -43,11 +43,12 @@ const (
 	CODE_EXECUTION_API_BASE_ENDPOINT = "/api/v1/questions/:id/execute/"
 
 	// Quiz API Endpoints
-	CHALLENGE_API_BASE_ENDPOINT               = "/api/v1/challenges"
-	CHALLENGE_API_ALL_CHALLENGES_ENDPOINT     = "/all"
-	CHALLENGE_API_CREATE_ENDPOINT             = "/create"
-	CHALLENGE_API_GET_BY_ID_ENDPOINT          = "/:id"
-	CHALLENGE_API_DELETE_ENDPOINT             = "/:id"
-	CHALLENGE_API_GET_ALL_BY_USER_ID_ENDPOINT = "/user/:userId"
-	CHALLENGE_API_SUBMIT_CHALLENGE_ENDPOINT   = "/:id/submit"
+	CHALLENGE_API_BASE_ENDPOINT                          = "/api/v1/challenges"
+	CHALLENGE_API_ALL_CHALLENGES_ENDPOINT                = "/all"
+	CHALLENGE_API_CREATE_ENDPOINT                        = "/create"
+	CHALLENGE_API_GET_BY_ID_ENDPOINT                     = "/:id"
+	CHALLENGE_API_DELETE_ENDPOINT                        = "/:id"
+	CHALLENGE_API_GET_ALL_BY_USER_ID_ENDPOINT            = "/user/:userId"
+	CHALLENGE_API_SUBMIT_CHALLENGE_ENDPOINT              = "/:id/submit"
+	CHALLENGE_API_GET_CORRECT_ANSWERS_CHALLENGE_ENDPOINT = "/:id/answers"
 )
