@@ -88,6 +88,31 @@ func CreateBlog(c *gin.Context) {
 		return
 	}
 
+	// update user collection
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Could not convert user id into object id: CreateBlog API: %v", nil)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	res := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).FindOneAndUpdate(
+		context.TODO(), 
+		bson.M{
+			"_id": userObjectId,
+		}, 
+		bson.M{
+			"$inc": bson.M{
+				"stats.blogs_created": 1,
+			},
+		},
+	)
+	if res.Err() != nil {
+		logrus.Errorf("Error updating user collection: CreateBlog API: %v", res.Err())
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
 	response.HandleResponse(c, http.StatusCreated, "Blog created successfully", result)
 }
 
