@@ -112,6 +112,33 @@ func ExecuteQuestion(c *gin.Context) {
 				response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 				return
 			}
+
+			// update user collection
+			userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+			if err != nil {
+				logrus.Errorf("Could not convert user id into object id: RunQuestionHandler API: %v", nil)
+				response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+				return
+			}
+			result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).FindOneAndUpdate(
+				context.TODO(), 
+				bson.M{
+					"_id": userObjectId,
+				}, 
+				bson.M{
+					"$push": bson.M{
+						"questions_submitted": questionId,
+					},
+					"$inc": bson.M{
+						"stats.questions_submitted": 1,
+					},
+				},
+			)
+			if result.Err() != nil {
+				logrus.Errorf("Error updating user collection: RunQuestionHandler API: %v", result.Err())
+				response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+				return
+			}
 		}
 
 		// convert res into proper format
