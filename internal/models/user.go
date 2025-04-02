@@ -9,6 +9,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type Stats struct {
+	QuestionsSubmitted int `json:"questions_submitted" bson:"questions_submitted"`
+	QuestionsCreated int `json:"questions_created" bson:"questions_created"`
+	BlogsCreated int `json:"blogs_created" bson:"blogs_created"`
+	ChallengesCreated int `json:"challenges_created" bson:"challenges_created"`
+	ChallengesTaken int `json:"challenges_taken" bson:"challenges_taken"`
+}
+
 type User struct {
 	ID                        string    `json:"id" bson:"_id"`
 	Name                      string    `json:"name" bson:"name"`
@@ -19,6 +27,9 @@ type User struct {
 	VerificationCode          string    `json:"verification_code" bson:"verification_code"`
 	VerificationCodeExpiresAt time.Time `json:"verification_code_expires_at" bson:"verification_code_expires_at"`
 	CreatedAt                 time.Time `json:"created_at" bson:"created_at"`
+	Stats                     Stats     `json:"stats" bson:"stats"`
+	QuestionsSubmitted          []string       `json:"questions_submitted" bson:"questions_submitted"` // list of questions submitted
+	ChallengesTaken []string       `json:"challenges_taken" bson:"challenges_taken"` // list of challenge ids
 }
 
 func CreateUser(user *User) (*mongo.InsertOneResult, error) {

@@ -183,6 +183,8 @@ func Login(c *gin.Context) {
 		Name:     decodedUser.Name,
 		Email:    decodedUser.Email,
 		Username: decodedUser.Username,
+		Stats:    decodedUser.Stats,
+		CreatedAt: decodedUser.CreatedAt,
 	})
 	if err != nil {
 		logrus.Errorf("Error generating the token: Login API: %v", err)
@@ -197,11 +199,15 @@ func Login(c *gin.Context) {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
 		Username string `json:"username"`
+		Stats    models.Stats `json:"stats"`
+		CreatedAt time.Time `json:"created_at"`
 	}{
 		ID:       decodedUser.ID,
 		Name:     decodedUser.Name,
 		Email:    decodedUser.Email,
 		Username: decodedUser.Username,
+		Stats:    decodedUser.Stats,
+		CreatedAt: decodedUser.CreatedAt,
 	}
 	response.HandleResponse(c, http.StatusOK, "Login successful", responseData)
 }
