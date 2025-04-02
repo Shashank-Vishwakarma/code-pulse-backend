@@ -62,6 +62,15 @@ func Register(c *gin.Context) {
 			Email:            body.Email,
 			Password:         hashedPassword,
 			VerificationCode: verificationCode,
+			QuestionsSubmitted: []string{},
+			ChallengesTaken: []string{},
+			Stats: models.Stats{
+				QuestionsSubmitted: 0,
+				QuestionsCreated:   0,
+				BlogsCreated:       0,
+				ChallengesCreated:  0,
+				ChallengesTaken:    0,
+			},
 		})
 		if err != nil {
 			logrus.Errorf("Error creating user: Register API: %v", err)
@@ -105,11 +114,21 @@ func Register(c *gin.Context) {
 			Name     string `json:"name"`
 			Email    string `json:"email"`
 			Username string `json:"username"`
+			Stats    models.Stats `json:"stats"`
+			CreatedAt time.Time `json:"created_at"`
 		}{
 			ID:       ID,
 			Name:     body.Name,
 			Email:    body.Email,
 			Username: body.Username,
+			Stats: models.Stats{
+				QuestionsSubmitted: 0,
+				QuestionsCreated:   0,
+				BlogsCreated:       0,
+				ChallengesCreated:  0,
+				ChallengesTaken:    0,
+			},
+			CreatedAt: time.Now(),
 		}
 		response.HandleResponse(c, http.StatusCreated, "User registered successfully. Please verify your email", responseData)
 	} else {
@@ -183,8 +202,6 @@ func Login(c *gin.Context) {
 		Name:     decodedUser.Name,
 		Email:    decodedUser.Email,
 		Username: decodedUser.Username,
-		Stats:    decodedUser.Stats,
-		CreatedAt: decodedUser.CreatedAt,
 	})
 	if err != nil {
 		logrus.Errorf("Error generating the token: Login API: %v", err)

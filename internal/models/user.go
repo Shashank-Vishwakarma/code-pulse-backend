@@ -41,6 +41,9 @@ func CreateUser(user *User) (*mongo.InsertOneResult, error) {
 		"is_email_verified":            false,
 		"verification_code":            user.VerificationCode,
 		"verification_code_expires_at": time.Now().Add(time.Hour),
+		"stats":                        user.Stats,
+		"questions_submitted":          user.QuestionsSubmitted,
+		"challenges_taken":             user.ChallengesTaken,
 		"created_at":                   time.Now(),
 	})
 	if err != nil {

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/models"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -16,8 +15,6 @@ type JWTPayload struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
-	Stats    models.Stats `json:"stats"`
-	CreatedAt time.Time `json:"created_at"`
 }
 
 func GenerateToken(payload JWTPayload) (string, error) {
@@ -26,8 +23,6 @@ func GenerateToken(payload JWTPayload) (string, error) {
 		"name":     payload.Name,
 		"email":    payload.Email,
 		"username": payload.Username,
-		"stats":    payload.Stats,
-		"created_at": payload.CreatedAt,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 
