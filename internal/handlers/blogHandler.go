@@ -127,9 +127,12 @@ func GetAllBlogs(c *gin.Context) {
 				"$regex":   query, // The substring you're looking for
 				"$options": "i",   // Makes the search case-insensitive (optional)
 			},
+			"isBlogPublished": true,
 		}
 	} else {
-		filter = bson.M{}
+		filter = bson.M{
+			"isBlogPublished": true,
+		}
 	}
 
 	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Find(context.TODO(), filter)
