@@ -31,7 +31,7 @@ type Challenge struct {
 	Data      []ChallegeQuestion `json:"data" bson:"data"`
 	Score string `json:"score" bson:"score"`
 	UserSelectedAnswers []UserSelectedAnswer `json:"user_selected_answers" bson:"user_selected_answers"`
-	UserID    primitive.ObjectID          `json:"user_id" bson:"user_id"`
+	UserID    primitive.ObjectID          `json:"user_id" bson:"user_id"` // owner
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 }
 
