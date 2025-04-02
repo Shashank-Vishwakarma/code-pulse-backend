@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/models"
@@ -57,6 +58,31 @@ func CreateQuestion(c *gin.Context) {
 	if err != nil {
 		logrus.Errorf("Error creating question: CreateQuestion API: %v", err)
 		response.HandleResponse(c, http.StatusInternalServerError, "Failed to create question", nil)
+		return
+	}
+
+	// update user collection
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Could not convert user id into object id: CreateQuestion API: %v", nil)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	res := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).FindOneAndUpdate(
+		context.TODO(), 
+		bson.M{
+			"_id": userObjectId,
+		}, 
+		bson.M{
+			"$inc": bson.M{
+				"stats.questions_created": 1,
+			},
+		},
+	)
+	if res.Err() != nil {
+		logrus.Errorf("Error updating user collection: CreateQuestion API: %v", res.Err())
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
 
@@ -276,7 +302,12 @@ func GetQuestionsByUser(c *gin.Context) {
 		return
 	}
 
-	var result []models.Question
+	var result []struct{
+		ID           string         `json:"id" bson:"_id,omitempty"`
+		Title        string         `json:"title" bson:"title"`
+		Difficulty   string     `json:"difficulty" bson:"difficulty"`
+		CreatedAt    time.Time      `json:"createdAt" bson:"createdAt"`
+	}
 	if err := cursor.All(context.TODO(), &result); err != nil {
 		logrus.Errorf("Error decoding the questions: GetAllQuestions API: %v", err)
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
@@ -284,4 +315,73 @@ func GetQuestionsByUser(c *gin.Context) {
 	}
 
 	response.HandleResponse(c, http.StatusOK, "Questions retrieved successfully", result)
+}
+
+func GetQuestionsSubmittedByUser(c *gin.Context) {
+	decodeUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Error getting user id: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).FindOne(context.TODO(), bson.M{"_id": userObjectId})
+	if result.Err() != nil {
+		logrus.Errorf("Error getting logged in user: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var user models.User
+	if err := result.Decode(&user); err != nil {
+		logrus.Errorf("Error decoding the user: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	questionsSubmitted := user.QuestionsSubmitted
+
+	if len(questionsSubmitted) == 0 {
+		logrus.Warn("No questions submitted by user")
+		response.HandleResponse(c, http.StatusOK, "No questions submitted", nil)
+		return
+	}
+
+	var questionIds []primitive.ObjectID
+	for _, questionId := range questionsSubmitted {
+		id, err := primitive.ObjectIDFromHex(questionId)
+		if err != nil {
+			logrus.Errorf("Error getting question id: GetQuestionsSubmittedByUser API: %v", err)
+			response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+			return
+		}
+		questionIds = append(questionIds, id)
+	}
+
+	options := options.Find().SetSort(bson.M{"createdAt": -1})
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).Find(context.TODO(), bson.M{"_id": bson.M{ "$in": questionIds }}, options)
+	if err != nil {
+		logrus.Errorf("Error getting all questions: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var questions []struct{
+		ID           string         `json:"id" bson:"_id,omitempty"`
+		Title        string         `json:"title" bson:"title"`
+	}
+	if err := cursor.All(context.TODO(), &questions); err != nil {
+		logrus.Errorf("Error decoding the questions: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Questions retrieved successfully", questions)
 }

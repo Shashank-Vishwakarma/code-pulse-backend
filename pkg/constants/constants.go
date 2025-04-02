@@ -22,13 +22,14 @@ const (
 	AUTH_API_RESEND_VERIFICATION_CODE_ENDPOINT = "/:username/resend-verification-code"
 
 	// Question API Endpoints
-	QUESTION_API_BASE_ENDPOINT        = "/api/v1/questions"
-	QUESTION_API_CREATE_ENDPOINT      = "/create"
-	QUESTION_API_GET_ALL_ENDPOINT     = "/"
-	QUESTION_API_GET_BY_ID_ENDPOINT   = "/:id"
-	QUESTION_API_UPDATE_ENDPOINT      = "/:id"
-	QUESTION_API_DELETE_ENDPOINT      = "/:id"
-	QUESTION_API_GET_BY_USER_ENDPOINT = "/user"
+	QUESTION_API_BASE_ENDPOINT                            = "/api/v1/questions"
+	QUESTION_API_CREATE_ENDPOINT                          = "/create"
+	QUESTION_API_GET_ALL_ENDPOINT                         = "/"
+	QUESTION_API_GET_BY_ID_ENDPOINT                       = "/:id"
+	QUESTION_API_UPDATE_ENDPOINT                          = "/:id"
+	QUESTION_API_DELETE_ENDPOINT                          = "/:id"
+	QUESTION_API_GET_BY_USER_ENDPOINT                     = "/user"
+	QUESTION_API_GET_QUESTIONS_SUBMITTED_BY_USER_ENDPOINT = "/submitted"
 
 	// Blog API Endpoints
 	BLOG_API_BASE_ENDPOINT           = "/api/v1/blogs"
@@ -48,7 +49,8 @@ const (
 	CHALLENGE_API_CREATE_ENDPOINT                        = "/create"
 	CHALLENGE_API_GET_BY_ID_ENDPOINT                     = "/:id"
 	CHALLENGE_API_DELETE_ENDPOINT                        = "/:id"
-	CHALLENGE_API_GET_ALL_BY_USER_ID_ENDPOINT            = "/user/:userId"
+	CHALLENGE_API_GET_ALL_BY_USER_ID_ENDPOINT            = "/user"
 	CHALLENGE_API_SUBMIT_CHALLENGE_ENDPOINT              = "/:id/submit"
 	CHALLENGE_API_GET_CORRECT_ANSWERS_CHALLENGE_ENDPOINT = "/:id/answers"
+	CHALLENGE_API_GET_CHALLENGES_TAKEN_ENDPOINT          = "/taken"
 )
