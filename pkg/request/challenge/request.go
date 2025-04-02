@@ -6,6 +6,11 @@ type ChallengeRequest struct {
 	Difficulty string `form:"difficulty" validate:"required"`
 }
 
+type ChallengeSubmittedQuestionAnswer struct {
+	Question string `json:"question" validate:"required"`
+	Answer   string `json:"answer" validate:"required"`
+}
+
 type SubmitChallengeRequest struct {
-	Answers []map[string]string `json:"answers" validate:"required"`
+	Answers []ChallengeSubmittedQuestionAnswer `json:"answers" validate:"required"`
 }

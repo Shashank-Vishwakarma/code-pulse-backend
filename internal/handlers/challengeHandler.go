@@ -17,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type QuestionData struct {
@@ -88,6 +89,24 @@ func CreateChallenge(c *gin.Context) {
 	})
 	if err != nil {
 		logrus.Errorf("Error inserting challenge in databse: CreateChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	// update user collection
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).FindOneAndUpdate(
+		context.TODO(), 
+		bson.M{
+			"_id": userObjectId,
+		}, 
+		bson.M{
+			"$inc": bson.M{
+				"stats.challenges_created": 1,
+			},
+		},
+	)
+	if result.Err() != nil {
+		logrus.Errorf("Error updating user collection: CreateChallenge API: %v", result.Err())
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
@@ -179,17 +198,9 @@ func DeleteChallenge(c *gin.Context) {
 }
 
 func GetAllChallengesByUserId(c *gin.Context) {
-	userId := c.Param("userId")
-
 	decodeUser, err := utils.GetDecodedUserFromContext(c)
 	if err != nil {
 		logrus.Errorf("Error getting decoded user: GetAllChallengesByUserId API: %v", err)
-		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
-		return
-	}
-
-	if decodeUser.ID != userId {
-		logrus.Errorf("User not authorized: GetAllChallengesByUserId API: %v", err)
 		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
@@ -226,7 +237,7 @@ func GetAllChallengesByUserId(c *gin.Context) {
 	var challenges []ChallengeData
 	err = cursor.All(context.TODO(), &challenges)
 	if err != nil {
-		logrus.Errorf("Error getting challenges for user id: %s: GetAllChallengesByUserId API: %v", userId, err)
+		logrus.Errorf("Error getting challenges for user id: %s: GetAllChallengesByUserId API: %v", decodeUser.ID, err)
 		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
@@ -307,6 +318,20 @@ func SubmitChallenge(c *gin.Context) {
 		return
 	}
 
+	decodeUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: SubmitChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Could not convert user id into object id: SubmitChallenge API: %v", nil)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
 	// check if challenge with this id exist
 	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).FindOne(
 		context.TODO(),
@@ -329,6 +354,15 @@ func SubmitChallenge(c *gin.Context) {
 		return
 	}
 
+	// check if user has already taken this challenge
+	for _, data := range challenge.UsersSubmissionData {
+		if data.SubmittedByUserID == userObjectId {
+			logrus.Warn("User has already taken this challenge: SubmitChallenge API")
+			response.HandleResponse(c, http.StatusOK, "You have already completed this challenge", nil)
+			return
+		}
+	}
+
 	score := utils.CalculateChallengeScore(body.Answers, challenge.Data)
 
 	// update the challenge score
@@ -340,12 +374,38 @@ func SubmitChallenge(c *gin.Context) {
 		bson.M{
 			"$set": bson.M{
 				"score": score,
-				"user_selected_answers": body.Answers,
+			},
+			"$push": bson.M{
+				"user_submission_data": bson.M{
+					"submitted_by_user_id": userObjectId,
+					"user_selected_answers": body.Answers,
+				},
 			},
 		},
 	)
 	if err != nil {
 		logrus.Errorf("Error updating challenge score: SubmitChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	// update user collection
+	res := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).FindOneAndUpdate(
+		context.TODO(), 
+		bson.M{
+			"_id": userObjectId,
+		}, 
+		bson.M{
+			"$push": bson.M{
+				"challenges_taken": challenge.ID,
+			},
+			"$inc": bson.M{
+				"stats.challenges_taken": 1,
+			},
+		},
+	)
+	if res.Err() != nil {
+		logrus.Errorf("Error updating user collection: SubmitChallenge API: %v", res.Err())
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
@@ -414,4 +474,69 @@ func GetCorrectAnswersForChallenge(c *gin.Context) {
 	}
 
 	response.HandleResponse(c, http.StatusOK, "Success", challenges[0])
+}
+
+func GetChallengesTakenByUser(c *gin.Context) {
+	decodeUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Error getting user id: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).FindOne(context.TODO(), bson.M{"_id": userObjectId})
+	if result.Err() != nil {
+		logrus.Errorf("Error getting logged in user: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var user models.User
+	if err := result.Decode(&user); err != nil {
+		logrus.Errorf("Error decoding the user: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	challengesTaken := user.ChallengesTaken
+	var challengesIds []primitive.ObjectID
+	for _, challengeId := range challengesTaken {
+		id, err := primitive.ObjectIDFromHex(challengeId)
+		if err != nil {
+			logrus.Errorf("Error getting question id: GetQuestionsSubmittedByUser API: %v", err)
+			response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+			return
+		}
+		challengesIds = append(challengesIds, id)
+	}
+
+	options := options.Find().SetSort(bson.M{"createdAt": -1})
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).Find(context.TODO(), bson.M{"_id": bson.M{ "$in": challengesIds }}, options)
+	if err != nil {
+		logrus.Errorf("Error getting all questions: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var challenges []struct{
+		ID           string         `json:"id" bson:"_id,omitempty"`
+		Title        string         `json:"title" bson:"title"`
+		Score        string         `json:"score" bson:"score"`
+		Topic        string         `json:"topic" bson:"topic"`
+		Difficulty   string         `json:"difficulty" bson:"difficulty"`
+	}
+	if err := cursor.All(context.TODO(), &challenges); err != nil {
+		logrus.Errorf("Error decoding the questions: GetQuestionsSubmittedByUser API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Questions retrieved successfully", challenges)
 }

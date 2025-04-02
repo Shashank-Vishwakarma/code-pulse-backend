@@ -16,6 +16,7 @@ func ChallengeRoutes(r *gin.Engine) {
 	challengeRouteGroup.GET(constants.CHALLENGE_API_GET_BY_ID_ENDPOINT, handlers.GetChallengeById)
 	challengeRouteGroup.GET(constants.CHALLENGE_API_GET_ALL_BY_USER_ID_ENDPOINT, handlers.GetAllChallengesByUserId)
 	challengeRouteGroup.GET(constants.CHALLENGE_API_GET_CORRECT_ANSWERS_CHALLENGE_ENDPOINT, handlers.GetCorrectAnswersForChallenge)
+	challengeRouteGroup.GET(constants.CHALLENGE_API_GET_CHALLENGES_TAKEN_ENDPOINT, handlers.GetChallengesTakenByUser)
 	challengeRouteGroup.POST(constants.CHALLENGE_API_CREATE_ENDPOINT, handlers.CreateChallenge)
 	challengeRouteGroup.DELETE(constants.CHALLENGE_API_DELETE_ENDPOINT, handlers.DeleteChallenge)
 	challengeRouteGroup.POST(constants.CHALLENGE_API_SUBMIT_CHALLENGE_ENDPOINT, handlers.SubmitChallenge)

@@ -17,6 +17,11 @@ type UserSelectedAnswer struct {
 	Answer string `json:"answer" bson:"answer"`
 }
 
+type UsersSubmissionData struct {
+	SubmittedByUserID primitive.ObjectID `json:"submitted_by_user_id" bson:"submitted_by_user_id"`
+	UserSelectedAnswers []UserSelectedAnswer `json:"user_selected_answers" bson:"user_selected_answers"`
+}
+
 type ChallegeQuestion struct {
 	Question string `json:"question" bson:"question"`
 	Options []string `json:"options" bson:"options"`
@@ -30,7 +35,7 @@ type Challenge struct {
 	Difficulty string		  `json:"difficulty" bson:"difficulty"`
 	Data      []ChallegeQuestion `json:"data" bson:"data"`
 	Score string `json:"score" bson:"score"`
-	UserSelectedAnswers []UserSelectedAnswer `json:"user_selected_answers" bson:"user_selected_answers"`
+	UsersSubmissionData []UsersSubmissionData `json:"user_submission_data" bson:"user_submission_data"`
 	UserID    primitive.ObjectID          `json:"user_id" bson:"user_id"` // owner
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 }
