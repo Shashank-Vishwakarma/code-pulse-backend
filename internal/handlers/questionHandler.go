@@ -376,6 +376,7 @@ func GetQuestionsSubmittedByUser(c *gin.Context) {
 	var questions []struct{
 		ID           string         `json:"id" bson:"_id,omitempty"`
 		Title        string         `json:"title" bson:"title"`
+		Difficulty   string     `json:"difficulty" bson:"difficulty"`
 	}
 	if err := cursor.All(context.TODO(), &questions); err != nil {
 		logrus.Errorf("Error decoding the questions: GetQuestionsSubmittedByUser API: %v", err)
