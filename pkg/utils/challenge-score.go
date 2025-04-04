@@ -11,10 +11,13 @@ import (
 const MAX_SCORE = 10
 
 func CalculateChallengeScore(answers []challenge.ChallengeSubmittedQuestionAnswer, data []models.ChallegeQuestion) string {
-	var score int
-	for i, answer := range answers {
-		if answer.Answer== data[i].CorrectAnswer {
-			score += 1
+	score := 0
+
+	for _, answer := range answers {
+		for _, question := range data {
+			if (answer.Question == question.Question) && (answer.Answer == question.CorrectAnswer) {
+				score += 1
+			}
 		}
 	}
 
