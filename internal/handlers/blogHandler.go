@@ -12,6 +12,7 @@ import (
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/constants"
 	request "github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/request/auth"
+	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/request/blog"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/response"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/utils"
 	"github.com/gin-gonic/gin"
@@ -166,6 +167,8 @@ func GetBlogById(c *gin.Context) {
 
 	pipeline := mongo.Pipeline{
 		{{"$match", bson.M{"_id": objectId}}},
+
+		// lookup for author
 		{{"$lookup", bson.M{
 			"from":         "users",       // Name of the users collection
 			"localField":   "authorId",     // Field in the blogs collection
@@ -173,6 +176,32 @@ func GetBlogById(c *gin.Context) {
 			"as":           "author",  // Output array field for user data
 		}}},
 		{{"$unwind", bson.M{"path": "$author", "preserveNullAndEmptyArrays": true}}}, // Flatten author array
+
+		bson.D{{"$lookup", bson.M{
+			"from": "comments",
+			"let": bson.M{"comment_ids": "$comment_ids"},
+			"pipeline": mongo.Pipeline{
+				{{"$match", bson.M{
+					"$expr": bson.M{"$in": bson.A{"$_id", "$$comment_ids"}},
+				}}},
+				// Lookup for comment's user
+				{{"$lookup", bson.M{
+					"from":         "users",
+					"localField":   "userId",
+					"foreignField": "_id",
+					"as":           "user",
+				}}},
+				{{"$unwind", bson.M{"path": "$user", "preserveNullAndEmptyArrays": true}}},
+				// Optional: remove sensitive fields
+				{{"$project", bson.M{
+					"user.password": 0,
+					"user._id":      0,
+				}}},
+				{{"$sort", bson.M{"createdAt": -1}}},
+			},
+			"as": "comments",
+		}}},
+
 		{{"$project", bson.M{
 			"author.password": 0,   // Exclude password from author data
 			"author._id":      0,   // Optional: Exclude MongoDB's _id field for author		
@@ -192,7 +221,17 @@ func GetBlogById(c *gin.Context) {
 		Body            string             `json:"body" bson:"body"`
 		ImageURL        string             `json:"imageUrl" bson:"imageUrl"`
 		Slug            string             `json:"slug" bson:"slug"`
-		Comments        []models.Comment          `json:"comments,omitempty" bson:"comments"`
+		Comments        []struct{
+			ID        primitive.ObjectID `json:"id" bson:"_id"`
+			Body      string             `json:"body" bson:"body"`
+			UserID    primitive.ObjectID `json:"userId" bson:"userId"`
+			User struct {
+				Name     string `json:"name" bson:"name"`
+				Username string `json:"username" bson:"username"`
+			} `json:"user" bson:"user"`
+			BlogID    primitive.ObjectID `json:"blogId" bson:"blogId"`
+			CreatedAt time.Time          `json:"createdAt" bson:"createdAt"`
+		}          `json:"comments,omitempty" bson:"comments"`
 		AuthorID        primitive.ObjectID `json:"authorId" bson:"authorId"`
 		Author struct{
 			Name     string             `json:"name" bson:"name"`
@@ -333,4 +372,67 @@ func GetBlogsByUser(c *gin.Context) {
 	}
 
 	response.HandleResponse(c, http.StatusOK, "Blogs fetched successfully", blogs)
+}
+
+func CreateComment(c *gin.Context ) {
+	blogId := c.Param("id")
+
+	objectId, err := primitive.ObjectIDFromHex(blogId)
+	if err != nil {
+		logrus.Errorf("Invalid blog id: CreateComment API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid blog id", nil)
+		return
+	}
+
+	decodeUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: CreateComment API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Error getting user id: CreateComment API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
+	var comment blog.CommentRequest
+	if err := c.ShouldBindJSON(&comment); err != nil {
+		logrus.Errorf("Invalid request body: CreateComment API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+
+	result, err := models.InsertDocumentInComments(&models.Comment{
+		Body: comment.Body,
+		UserID: userObjectId,
+		BlogID: objectId,
+	})
+	if err != nil {
+		logrus.Errorf("Error creating comment: CreateComment API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	// update blog
+	updateStage := bson.M{
+		"$push": bson.M{
+			"comment_ids": result.InsertedID,
+		},
+	}
+
+	_, updateErr := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).UpdateOne(context.TODO(), bson.M{"_id": objectId}, updateStage)
+	if updateErr != nil {
+		logrus.Errorf("Error updating blog: CreateComment API: %v", updateErr)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Comment created successfully", result.InsertedID)
+}
+
+func GetAllCommentsOnABlog(c *gin.Context) {
+	
 }

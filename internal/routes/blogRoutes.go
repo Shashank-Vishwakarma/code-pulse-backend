@@ -18,4 +18,5 @@ func BlogRoutes(r *gin.Engine) {
 	blogRouteGroup.PUT(constants.BLOG_API_UPDATE_ENDPOINT, handlers.UpdateBlog)
 	blogRouteGroup.DELETE(constants.BLOG_API_DELETE_ENDPOINT, handlers.DeleteBlog)
 	blogRouteGroup.GET(constants.BLOG_API_GET_BY_USER_ID_ENDPOINT, handlers.GetBlogsByUser)
+	blogRouteGroup.POST(constants.BLOG_API_CREATE_COMMENT_ENDPOINT, handlers.CreateComment)
 }

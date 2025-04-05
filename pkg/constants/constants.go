@@ -9,6 +9,7 @@ const (
 	USER_COLLECTION            = "users"
 	QUESTION_COLLECTION        = "questions"
 	BLOG_COLLECTION            = "blogs"
+	COMMENT_COLLECTION         = "comments"
 	CODE_SUBMISSION_COLLECTION = "submissions"
 	CHALLENGE_COLLECTION       = "challenges"
 
@@ -39,6 +40,7 @@ const (
 	BLOG_API_UPDATE_ENDPOINT         = "/:id"
 	BLOG_API_DELETE_ENDPOINT         = "/:id"
 	BLOG_API_GET_BY_USER_ID_ENDPOINT = "/user"
+	BLOG_API_CREATE_COMMENT_ENDPOINT = "/:id/comments"
 
 	// Code Execution Endpoints
 	CODE_EXECUTION_API_BASE_ENDPOINT = "/api/v1/questions/:id/execute/"

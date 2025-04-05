@@ -20,7 +20,7 @@ type Blog struct {
 	ImageURL        string    `json:"imageUrl" bson:"imageUrl"`
 	IsBlogPublished bool      `json:"isBlogPublished" bson:"isBlogPublished"`
 	Slug            string    `json:"slug" bson:"slug"`
-	Comments        []Comment `json:"comments,omitempty" bson:"comments"`
+	CommentIDs        []primitive.ObjectID `json:"comment_ids,omitempty" bson:"comment_ids,omitempty"`
 	UpVotes         []string  `json:"upVotes,omitempty" bson:"upVotes"`
 	DownVotes       []string  `json:"downVotes,omitempty" bson:"downVotes"`
 	AuthorID        primitive.ObjectID    `json:"authorId" bson:"authorId"`
