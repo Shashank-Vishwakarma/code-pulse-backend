@@ -348,7 +348,6 @@ func DeleteBlog(c *gin.Context) {
 }
 
 func GetBlogsByUser(c *gin.Context) {
-	// get the data from context
 	decodeUser, err := utils.GetDecodedUserFromContext(c)
 	if err != nil {
 		logrus.Errorf("Error getting decoded user: CreateBlog API: %v", err)
@@ -356,8 +355,15 @@ func GetBlogsByUser(c *gin.Context) {
 		return
 	}
 
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Could not convert user id into object id: CreateBlog API: %v", nil)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
 	options := options.Find().SetSort(bson.M{"createdAt": -1})
-	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Find(context.TODO(), bson.M{"authorId": decodeUser.ID}, options)
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Find(context.TODO(), bson.M{"authorId": userObjectId}, options)
 	if err != nil {
 		logrus.Errorf("Error getting all blogs: GetAllBlogs API: %v", err)
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
