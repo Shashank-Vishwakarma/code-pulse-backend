@@ -9,6 +9,7 @@ import (
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/config"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/pkg/constants"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -22,7 +23,7 @@ type Blog struct {
 	Comments        []Comment `json:"comments,omitempty" bson:"comments"`
 	UpVotes         []string  `json:"upVotes,omitempty" bson:"upVotes"`
 	DownVotes       []string  `json:"downVotes,omitempty" bson:"downVotes"`
-	AuthorID        string    `json:"authorId" bson:"authorId"`
+	AuthorID        primitive.ObjectID    `json:"authorId" bson:"authorId"`
 	CreatedAt       time.Time `json:"createdAt" bson:"createdAt"`
 }
 

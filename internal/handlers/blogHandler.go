@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/database"
 	"github.com/Shashank-Vishwakarma/code-pulse-backend/internal/models"
@@ -17,6 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -40,6 +42,13 @@ func CreateBlog(c *gin.Context) {
 	if err != nil {
 		logrus.Errorf("Error getting decoded user: CreateBlog API: %v", err)
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Could not convert user id into object id: CreateBlog API: %v", nil)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
 
@@ -79,7 +88,7 @@ func CreateBlog(c *gin.Context) {
 		Title:           body.Title,
 		Body:            body.Body,
 		IsBlogPublished: body.IsBlogPublished,
-		AuthorID:        decodeUser.ID,
+		AuthorID:        userObjectId,
 		ImageURL:        imageUrl,
 	})
 	if err != nil {
@@ -89,13 +98,6 @@ func CreateBlog(c *gin.Context) {
 	}
 
 	// update user collection
-	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
-	if err != nil {
-		logrus.Errorf("Could not convert user id into object id: CreateBlog API: %v", nil)
-		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
-		return
-	}
-
 	res := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).FindOneAndUpdate(
 		context.TODO(), 
 		bson.M{
@@ -162,21 +164,49 @@ func GetBlogById(c *gin.Context) {
 		return
 	}
 
-	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).FindOne(context.TODO(), bson.M{"_id": objectId})
-	if result.Err() != nil {
-		logrus.Errorf("Blog not found: GetBlogById API: %v", result.Err())
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.M{"_id": objectId}}},
+		{{"$lookup", bson.M{
+			"from":         "users",       // Name of the users collection
+			"localField":   "authorId",     // Field in the blogs collection
+			"foreignField": "_id",         // Field in the users collection
+			"as":           "author",  // Output array field for user data
+		}}},
+		{{"$unwind", bson.M{"path": "$author", "preserveNullAndEmptyArrays": true}}}, // Flatten author array
+		{{"$project", bson.M{
+			"author.password": 0,   // Exclude password from author data
+			"author._id":      0,   // Optional: Exclude MongoDB's _id field for author		
+		}}},
+	}
+
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		logrus.Errorf("Blog not found: GetBlogById API: %v", err.Error())
 		response.HandleResponse(c, http.StatusNotFound, "Blog not found", nil)
 		return
 	}
 
-	var blog models.Blog
-	if err := result.Decode(&blog); err != nil {
+	var blogs []struct {
+		ID              string             `json:"id" bson:"_id"`
+		Title           string             `json:"title" bson:"title"`
+		Body            string             `json:"body" bson:"body"`
+		ImageURL        string             `json:"imageUrl" bson:"imageUrl"`
+		Slug            string             `json:"slug" bson:"slug"`
+		Comments        []models.Comment          `json:"comments,omitempty" bson:"comments"`
+		AuthorID        primitive.ObjectID `json:"authorId" bson:"authorId"`
+		Author struct{
+			Name     string             `json:"name" bson:"name"`
+			Username string             `json:"username" bson:"username"`
+		} `json:"author" bson:"author"`
+		CreatedAt       time.Time          `json:"createdAt" bson:"createdAt"`
+	}
+	if err := cursor.All(context.TODO(), &blogs); err != nil {
 		logrus.Errorf("Error decoding the blog: GetBlogById API: %v", err)
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
 
-	response.HandleResponse(c, http.StatusOK, "Blog fetched successfully", blog)
+	response.HandleResponse(c, http.StatusOK, "Blog fetched successfully", blogs[0])
 }
 
 func UpdateBlog(c *gin.Context) {
