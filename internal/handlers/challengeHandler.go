@@ -456,6 +456,13 @@ func GetCorrectAnswersForChallenge(c *gin.Context) {
 			CorrectAnswer string `bson:"correct_answer" json:"correct_answer"`
 		} `bson:"data" json:"data"`
 		Score string `bson:"score" json:"score"`
+		UserSubmissionData []struct {
+			SubmittedByUserId primitive.ObjectID `bson:"submitted_by_user_id" json:"submitted_by_user_id"`
+			UserSelectedAnswers []struct {
+				Question string `bson:"question" json:"question"`
+				Answer string `bson:"answer" json:"answer"`
+			} `bson:"user_selected_answers" json:"user_selected_answers"`
+		} `bson:"user_submission_data" json:"user_submission_data"`
 		UserID    primitive.ObjectID    `bson:"user_id" json:"user_id"`
 		UserData  User           `bson:"user_data" json:"user_data"`
 		CreatedAt time.Time `bson:"created_at" json:"created_at"`
