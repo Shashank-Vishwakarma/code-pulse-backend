@@ -42,6 +42,7 @@ type Env struct {
 
 	// AI Configuration
 	GROQ_API_KEY string `mapstructure:"GROQ_API_KEY"`
+	GROQ_CHAT_COMPLETION_ENDPOINT string `mapstructure:"GROQ_CHAT_COMPLETION_ENDPOINT"`
 
 	// Mode for golang
 	MODE string `mapstructure:"MODE"`
@@ -104,6 +105,7 @@ func NewEnv() error {
 		"CLOUDINARY_API_KEY":    Config.CLOUDINARY_API_KEY,
 		"CLOUDINARY_API_SECRET": Config.CLOUDINARY_API_SECRET,
 		"GROQ_API_KEY": 	Config.GROQ_API_KEY,
+		"GROQ_CHAT_COMPLETION_ENDPOINT": Config.GROQ_CHAT_COMPLETION_ENDPOINT,
 		"MODE":                  Config.MODE,
 	}
 

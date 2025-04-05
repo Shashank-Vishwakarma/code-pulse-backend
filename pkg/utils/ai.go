@@ -14,40 +14,46 @@ import (
 )
 
 var prompt = `
-Generate 10 multiple-choice questions on the topic: %s. 
+You are an AI that generates quiz questions.
 
-The difficulty level of this challenge should be %s.
+Your task is to generate exactly 10 multiple-choice questions on the topic: "%s".
+The difficulty level of the challenge should be: "%s".
 
-Each question should include:
-1. A clear and concise question statement.
-2. Four answer options.
-3. The correct answer to each question.
+⚠️ IMPORTANT:
+- Your response MUST be a valid JSON object.
+- Do NOT include any explanations, markdown, code blocks, or extra text — ONLY the JSON.
+- All keys and string values must be enclosed in double quotes.
+- Use proper JSON syntax, with commas, brackets, and colons placed correctly.
 
-Make the questions suitable for a quiz format, engaging, and of moderate difficulty. 
-Ensure the questions are relevant to the topic and avoid ambiguity.
-
-Please strictly provide a json response with the following format (Below is an example response that you should provide):
+🧠 FORMAT TO FOLLOW (strictly return this structure):
 {
-	"topic": "sql",
+	"topic": "your topic here",
 	"questions": [
 		{
-			"question": "question statement",
-			"options": [option1, option2, option3, option4],
-			"correct_answer": "option2"
+		"question": "Your question text",
+		"options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+		"correct_answer": "One of the above options"
 		},
-		{
-			"question": "question text",
-			"options": [option1, option2, option3, option4],
-			"correct_answer": "option4"
-		},
-		... and so on for all 10 questions.
+		...
+		(Total 10 questions)
 	]
 }
 
-This response should be a valid json.
-`
+✅ Example (shortened for reference):
+{
+	"topic": "SQL",
+	"questions": [
+		{
+		"question": "Which SQL keyword is used to retrieve data?",
+		"options": ["INSERT", "SELECT", "UPDATE", "DELETE"],
+		"correct_answer": "SELECT"
+		},
+		...
+	]
+}
 
-const url = "https://api.groq.com/openai/v1/chat/completions"
+Return ONLY valid JSON and nothing else.
+`
 
 type AIResponse struct {
 	Questions []models.ChallegeQuestion `json:"questions"`
@@ -102,7 +108,7 @@ func GenerateAIResponse(topic, difficulty string) (AIResponse, error) {
 		return AIResponse{}, err
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
+	req, err := http.NewRequest("POST", config.Config.GROQ_CHAT_COMPLETION_ENDPOINT, bytes.NewBuffer([]byte(jsonData)))
 	if err != nil {
 		logrus.Printf("Error creating request: GenerateAIResponse: %v", err)
 		return AIResponse{}, err
@@ -135,10 +141,13 @@ func GenerateAIResponse(topic, difficulty string) (AIResponse, error) {
 		return AIResponse{}, err
 	}
 
-	content := ""
-	if result.Choices[0].Message.Content[0] == '`' {
-		content = strings.ReplaceAll(result.Choices[0].Message.Content, "`", "")
-	}
+	content := result.Choices[0].Message.Content
+	content = strings.TrimSpace(content)
+	content = strings.TrimPrefix(content, "```json")
+	content = strings.TrimPrefix(content, "```")
+	content = strings.TrimSuffix(content, "```")
+
+	fmt.Println("Content: ", content)
 
 	// create AIResponse
 	var res AIResponse
