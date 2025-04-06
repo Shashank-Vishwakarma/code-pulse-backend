@@ -1,6 +1,8 @@
 package constants
 
 const PYTHON_CODE_TEMPLATE = `
+import json
+
 %s
 
 results = []
@@ -31,7 +33,7 @@ for tc in testcases:
 	
 	results.append(res)
 
-print(results)
+print(json.dumps(results))
 `
 
 const JAVASCRIPT_CODE_TEMPLATE = `

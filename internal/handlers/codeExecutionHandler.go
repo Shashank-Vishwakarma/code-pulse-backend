@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -90,6 +91,8 @@ func ExecuteQuestion(c *gin.Context) {
 			code = utils.GenerateCodeTemplate(question.TestCases, body.Language, codeSnippet, body.Code)
 		}
 
+		fmt.Println(code)
+
 		// run the code for given language in its container
 		res, err := services.ExecuteCodeInDocker(body.Language, code)
 		if err != nil {
@@ -146,6 +149,8 @@ func ExecuteQuestion(c *gin.Context) {
 		cleanedData := strings.Trim(res, "\u0001\u0000\n")
 		reg := regexp.MustCompile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]`)
 		cleanedData = reg.ReplaceAllString(cleanedData, "")
+
+		fmt.Println(cleanedData)
 
 		var responses []services.Response
 		err = json.Unmarshal([]byte(cleanedData), &responses)

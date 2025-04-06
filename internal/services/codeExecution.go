@@ -126,7 +126,7 @@ func getDockerfileContent(language string) (string, error) {
 			`
 	case "javascript":
 		Dockerfile = `
-			FROM node:20
+			FROM node:20-slim
 			WORKDIR /app
 			COPY . /app
 			CMD ["node", "main.js"]
@@ -214,7 +214,7 @@ func buildImageFromDockerfile(client *client.Client, tags []string, dockerfilePa
 
 func runContainer(client *client.Client, dir, dockerImageName, containerName string) (string, error) {
 	// context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	
 	// create container
