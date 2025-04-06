@@ -182,7 +182,12 @@ func GetBlogById(c *gin.Context) {
 			"let": bson.M{"comment_ids": "$comment_ids"},
 			"pipeline": mongo.Pipeline{
 				{{"$match", bson.M{
-					"$expr": bson.M{"$in": bson.A{"$_id", "$$comment_ids"}},
+					"$expr": bson.M{
+						"$in": bson.A{
+							"$_id",
+							bson.M{"$ifNull": bson.A{"$$comment_ids", bson.A{}}},
+						},
+					},
 				}}},
 				// Lookup for comment's user
 				{{"$lookup", bson.M{
@@ -363,6 +368,14 @@ func DeleteBlog(c *gin.Context) {
 	)
 	if err != nil {
 		logrus.Errorf("Error updating user stats: DeleteQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	// delete all the comments for this blog
+	_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.COMMENT_COLLECTION).DeleteMany(context.TODO(), bson.M{"blogId": objectId})
+	if err != nil {
+		logrus.Errorf("Error deleting comments: DeleteBlog API: %v", err)
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
