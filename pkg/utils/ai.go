@@ -147,8 +147,6 @@ func GenerateAIResponse(topic, difficulty string) (AIResponse, error) {
 	content = strings.TrimPrefix(content, "```")
 	content = strings.TrimSuffix(content, "```")
 
-	fmt.Println("Content: ", content)
-
 	// create AIResponse
 	var res AIResponse
 	err = json.Unmarshal([]byte(content), &res)

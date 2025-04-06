@@ -37,32 +37,38 @@ print(results)
 const JAVASCRIPT_CODE_TEMPLATE = `
 %s
 
-let results = []
+const results = [];
 let testcases = %s
 
-for(let tc of testcases) {
-	let args = tc["input"].split(";").map(arg => arg.trim())
+for (const tc of testcases) {
+    const args = tc.input.split(";").map(arg => arg.split("=")[1])
 
-	let output = %s + "("
-	for(let arg of args):
-		output += arg + ", "
-	output += ")"
+	let input = "("
+	for(const arg of args) {
+		input += arg + ", "
+	}
+	input += ")"
+
+	const func_name = '%s'
+
+	%s
 
 	const res = {
-		"input": tc["input"],
-		"output": output,
-		"expected": tc["output"],
+		"input": tc.input,
+		"output": output.toString(),
+		"expected": tc.output,
+	}
+	
+	if (output.toString() !== tc.output) {
+		res["result"] = false
+	} else {
+		res["result"] = true
 	}
 
-	if output != tc["output"]:
-		res["result"] = false
-	else:
-		res["result"] = true
-	
-	results.push(res)
+    results.push(res);
 }
 
-console.log(results)
+console.log(JSON.stringify(results));
 `
 
 var GOLANG_CODE_TEMPLATE = map[string]string{

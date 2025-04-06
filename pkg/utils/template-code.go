@@ -39,7 +39,7 @@ func GenerateCodeTemplate(testCases []models.TestCase, language, codeSnippet, us
 			testCase = "{\"input\": \"" + tc.Input + "\", \"output\": \"" + tc.Output + "\"},"
 		}
 		if language == "javascript" {
-			testCase = "{input: " + tc.Input + ", output: " + tc.Output + "},"
+			testCase = "{input: " + fmt.Sprintf("%q", tc.Input) + ", output: " + fmt.Sprintf("%q", tc.Output) + "},"
 		}
 
 		testcases += testCase
@@ -47,6 +47,11 @@ func GenerateCodeTemplate(testCases []models.TestCase, language, codeSnippet, us
 	testcases += "]"
 
 	codeTemplate := fmt.Sprintf(constants.GOLANG_CODE_TEMPLATE[language], userCode, testcases, functionName)
+
+	if language == "javascript" {
+		code := "const output = eval(`${func_name}${input}`)"
+		codeTemplate = fmt.Sprintf(constants.GOLANG_CODE_TEMPLATE[language], userCode, testcases, functionName, code)
+	}
 
 	return codeTemplate
 }

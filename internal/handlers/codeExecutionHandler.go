@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -143,6 +144,8 @@ func ExecuteQuestion(c *gin.Context) {
 
 		// convert res into proper format
 		cleanedData := strings.Trim(res, "\u0001\u0000\n")
+		reg := regexp.MustCompile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]`)
+		cleanedData = reg.ReplaceAllString(cleanedData, "")
 
 		var responses []services.Response
 		err = json.Unmarshal([]byte(cleanedData), &responses)
