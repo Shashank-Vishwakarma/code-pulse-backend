@@ -172,7 +172,7 @@ func DeleteChallenge(c *gin.Context) {
 		response.HandleResponse(c, http.StatusBadRequest, "Invalid Challenge Id", nil)
 		return
 	}
-	
+
 	decodeUser, err := utils.GetDecodedUserFromContext(c)
 	if err != nil {
 		logrus.Errorf("Error getting decoded user: DeleteChallenge API: %v", err)
@@ -187,14 +187,78 @@ func DeleteChallenge(c *gin.Context) {
 		return
 	}
 
-	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).FindOneAndDelete(context.Background(), bson.M{"_id": objectId, "user_id": userObjectId})
+	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).FindOne(
+		context.TODO(),
+		bson.M{"_id": objectId},
+	)
+	if result.Err() != nil {
+		logrus.Errorf("Error getting challenge: CheckSubmissionofChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var challenge models.Challenge
+	if err := result.Decode(&challenge); err != nil {
+		logrus.Errorf("Error decoding the challenge: CheckSubmissionofChallenge API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	result = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CHALLENGE_COLLECTION).FindOneAndDelete(context.Background(), bson.M{"_id": objectId, "user_id": userObjectId})
 	if result.Err() != nil {
 		logrus.Errorf("Error deleting the challenge with id: %s: DeleteChallenge API: %v", id, result.Err().Error())
 		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
 
-	response.HandleResponse(c, http.StatusOK, "Challenge deleted successfully", nil)
+	isParticipant := false
+	userSubmissionData := challenge.UsersSubmissionData
+	for _, userSubmission := range userSubmissionData {
+		if userSubmission.SubmittedByUserID == userObjectId {
+			isParticipant = true
+		}
+	}
+
+	if isParticipant {
+		// update the user collection stats
+		_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).UpdateOne(
+			context.TODO(),
+			bson.M{"_id": decodeUser.ID},
+			bson.M{
+				"$inc": bson.M{
+					"stats.challenges_taken": -1,
+					"stats.challenges_created": -1,
+				},
+			},
+		)
+		if err != nil {
+			logrus.Errorf("Error updating user stats: DeleteQuestion API: %v", err)
+			response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+			return
+		}
+
+		response.HandleResponse(c, http.StatusOK, "Challenge deleted successfully", true)
+		return
+	} else {
+		// update the user collection stats
+		_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).UpdateOne(
+			context.TODO(),
+			bson.M{"_id": decodeUser.ID},
+			bson.M{
+				"$inc": bson.M{
+					"stats.challenges_created": -1,
+				},
+			},
+		)
+		if err != nil {
+			logrus.Errorf("Error updating user stats: DeleteQuestion API: %v", err)
+			response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+			return
+		}
+
+		response.HandleResponse(c, http.StatusOK, "Challenge deleted successfully", false)
+		return
+	}
 }
 
 func GetAllChallengesByUserId(c *gin.Context) {

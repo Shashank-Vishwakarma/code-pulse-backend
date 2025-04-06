@@ -337,10 +337,33 @@ func DeleteBlog(c *gin.Context) {
 		return
 	}
 
+	decodeUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: DeleteBlog API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
 	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.BLOG_COLLECTION).FindOneAndDelete(context.TODO(), bson.M{"_id": objectId})
 	if result.Err() != nil {
 		logrus.Error("Blog not found: DeleteBlog API")
 		response.HandleResponse(c, http.StatusNotFound, "Blog not found", nil)
+		return
+	}
+	
+	// update the user collection stats
+	_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).UpdateOne(
+		context.TODO(),
+		bson.M{"_id": decodeUser.ID},
+		bson.M{
+			"$inc": bson.M{
+				"stats.blogs_created": -1,
+			},
+		},
+	)
+	if err != nil {
+		logrus.Errorf("Error updating user stats: DeleteQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
 		return
 	}
 

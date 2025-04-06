@@ -275,6 +275,13 @@ func DeleteQuestion(c *gin.Context) {
 		response.HandleResponse(c, http.StatusBadRequest, "Invalid question id", nil)
 	}
 
+	decodeUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: DeleteQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
 	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).FindOneAndDelete(context.TODO(), bson.M{"_id": objectId})
 	if result.Err() != nil {
 		logrus.Error("Question not found: DeleteQuestion API")
@@ -282,7 +289,60 @@ func DeleteQuestion(c *gin.Context) {
 		return
 	}
 
-	response.HandleResponse(c, http.StatusOK, "Question deleted successfully", nil)
+	// if user has previously submitted this question, delete it
+	delResults, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CODE_SUBMISSION_COLLECTION).DeleteMany(
+		context.TODO(),
+		bson.M{
+			"question_id": id,
+			"user_id":     decodeUser.ID,
+		},
+	)
+	if err != nil {
+		logrus.Errorf("Error deleting code submission: DeleteQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	if delResults.DeletedCount > 0 {
+		// update the user collection stats
+		_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).UpdateOne(
+			context.TODO(),
+			bson.M{"_id": decodeUser.ID},
+			bson.M{
+				"$inc": bson.M{
+					"stats.questions_submitted": -1 * delResults.DeletedCount,
+					"stats.questions_created": -1,
+				},
+			},
+		)
+		if err != nil {
+			logrus.Errorf("Error updating user stats [submit and create stats]: DeleteQuestion API: %v", err)
+			response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+			return
+		}
+
+		response.HandleResponse(c, http.StatusOK, "Question deleted successfully", true)
+		return
+	} else {
+		// update the user collection stats
+		_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).UpdateOne(
+			context.TODO(),
+			bson.M{"_id": decodeUser.ID},
+			bson.M{
+				"$inc": bson.M{
+					"stats.questions_created": -1,
+				},
+			},
+		)
+		if err != nil {
+			logrus.Errorf("Error updating user stats [creaete stats]: DeleteQuestion API: %v", err)
+			response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+			return
+		}
+
+		response.HandleResponse(c, http.StatusOK, "Question deleted successfully", false)
+		return
+	}
 }
 
 func GetQuestionsByUser(c *gin.Context) {
