@@ -282,6 +282,13 @@ func DeleteQuestion(c *gin.Context) {
 		return
 	}
 
+	userObjectId, err := primitive.ObjectIDFromHex(decodeUser.ID)
+	if err != nil {
+		logrus.Errorf("Error getting user id: DeleteQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
 	result := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.QUESTION_COLLECTION).FindOneAndDelete(context.TODO(), bson.M{"_id": objectId})
 	if result.Err() != nil {
 		logrus.Error("Question not found: DeleteQuestion API")
@@ -307,7 +314,7 @@ func DeleteQuestion(c *gin.Context) {
 		// update the user collection stats
 		_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).UpdateOne(
 			context.TODO(),
-			bson.M{"_id": decodeUser.ID},
+			bson.M{"_id": userObjectId},
 			bson.M{
 				"$inc": bson.M{
 					"stats.questions_submitted": -1 * delResults.DeletedCount,
@@ -321,13 +328,13 @@ func DeleteQuestion(c *gin.Context) {
 			return
 		}
 
-		response.HandleResponse(c, http.StatusOK, "Question deleted successfully", true)
+		response.HandleResponse(c, http.StatusOK, "Question deleted successfully", delResults.DeletedCount)
 		return
 	} else {
 		// update the user collection stats
 		_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).UpdateOne(
 			context.TODO(),
-			bson.M{"_id": decodeUser.ID},
+			bson.M{"_id": userObjectId},
 			bson.M{
 				"$inc": bson.M{
 					"stats.questions_created": -1,

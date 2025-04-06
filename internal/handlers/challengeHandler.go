@@ -223,7 +223,7 @@ func DeleteChallenge(c *gin.Context) {
 		// update the user collection stats
 		_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).UpdateOne(
 			context.TODO(),
-			bson.M{"_id": decodeUser.ID},
+			bson.M{"_id": userObjectId},
 			bson.M{
 				"$inc": bson.M{
 					"stats.challenges_taken": -1,
@@ -243,7 +243,7 @@ func DeleteChallenge(c *gin.Context) {
 		// update the user collection stats
 		_, err = database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.USER_COLLECTION).UpdateOne(
 			context.TODO(),
-			bson.M{"_id": decodeUser.ID},
+			bson.M{"_id": userObjectId},
 			bson.M{
 				"$inc": bson.M{
 					"stats.challenges_created": -1,
