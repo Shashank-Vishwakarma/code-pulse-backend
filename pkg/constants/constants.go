@@ -43,7 +43,8 @@ const (
 	BLOG_API_CREATE_COMMENT_ENDPOINT = "/:id/comments"
 
 	// Code Execution Endpoints
-	CODE_EXECUTION_API_BASE_ENDPOINT = "/api/v1/questions/:id/execute/"
+	CODE_EXECUTION_API_BASE_ENDPOINT     = "/api/v1/questions/:id/execute/"
+	COMPILER_CODE_EXECUTION_API_ENDPOINT = "/api/v1/code"
 
 	// Quiz API Endpoints
 	CHALLENGE_API_BASE_ENDPOINT                          = "/api/v1/challenges"

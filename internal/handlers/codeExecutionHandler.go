@@ -166,3 +166,32 @@ func ExecuteQuestion(c *gin.Context) {
 		return
 	}
 }
+
+func ExecuteCompilerCode(c *gin.Context) {
+	var body codeexecutor.ExecuteCompilerCode
+	if err := c.ShouldBindJSON(&body); err != nil {
+		logrus.Errorf("Invalid request body: ExecuteCompilerCode API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+
+	if err := utils.ValidateRequest(body); err != nil {
+		logrus.Errorf("Error validating the request body: ExecuteCompilerCode API: %v", err)
+		response.HandleResponse(c, http.StatusBadRequest, "Error validating the request body", nil)
+		return
+	}
+
+	// run the code
+	output, err := services.ExecuteCodeInDocker(body.Language, body.Code)
+	if err != nil {
+		logrus.Errorf("Error running the code: ExecuteCompilerCode API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+
+	cleanedData := strings.Trim(output, "\u0001\u0000\n")
+	reg := regexp.MustCompile(`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]`)
+	cleanedData = reg.ReplaceAllString(cleanedData, "")
+
+	response.HandleResponse(c, http.StatusOK, "Code executed successfully", cleanedData)
+}

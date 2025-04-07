@@ -9,4 +9,5 @@ import (
 
 func CodeExecutionRoutes(r *gin.Engine) {
 	r.POST(constants.CODE_EXECUTION_API_BASE_ENDPOINT, middlewares.Authorization(), handlers.ExecuteQuestion)
+	r.POST(constants.COMPILER_CODE_EXECUTION_API_ENDPOINT, middlewares.Authorization(), handlers.ExecuteCompilerCode)
 }
