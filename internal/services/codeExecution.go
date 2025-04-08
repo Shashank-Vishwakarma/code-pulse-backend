@@ -110,6 +110,8 @@ func getCodeFileName(language string) (string, error) {
 		fileName = "main.go"
 	case "cpp":
 		fileName = "main.cpp"
+	case "java":
+		fileName = "Main.java"
 	default:
 		return "", fmt.Errorf("unsupported language: %s", language)
 	}
@@ -150,6 +152,13 @@ func getDockerfileContent(language string) (string, error) {
 			COPY . /app
 			CMD ["sh", "-c", "g++ -o main main.cpp && ./main"]
 			`
+	case "java":
+		Dockerfile = `
+			FROM openjdk:17-alpine
+			WORKDIR /app
+			COPY . /app
+			CMD ["sh", "-c", "javac Main.java && java Main"]
+			`
 	default:
 		return "", fmt.Errorf("unsupported language: %s", language)
 	}
@@ -171,6 +180,8 @@ func getImageName(language string) string {
 		imageName = fmt.Sprintf("%s-%s-image", baseName, "go")
 	case "cpp":
 		imageName = fmt.Sprintf("%s-%s-image", baseName, "cpp")
+	case "java":
+		imageName = fmt.Sprintf("%s-%s-image", baseName, "java")
 	default:
 		imageName = ""
 	}
