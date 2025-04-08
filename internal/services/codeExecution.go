@@ -106,6 +106,8 @@ func getCodeFileName(language string) (string, error) {
 		fileName = "main.py"
 	case "javascript":
 		fileName = "main.js"
+	case "go":
+		fileName = "main.go"
 	default:
 		return "", fmt.Errorf("unsupported language: %s", language)
 	}
@@ -131,6 +133,13 @@ func getDockerfileContent(language string) (string, error) {
 			COPY . /app
 			CMD ["node", "main.js"]
 			`
+	case "go":
+		Dockerfile = `
+			FROM golang:alpine
+			WORKDIR /app
+			COPY . /app
+			CMD ["go", "run", "main.go"]
+			`
 	default:
 		return "", fmt.Errorf("unsupported language: %s", language)
 	}
@@ -148,6 +157,8 @@ func getImageName(language string) string {
 		imageName = fmt.Sprintf("%s-%s-image", baseName, "python")
 	case "javascript":
 		imageName = fmt.Sprintf("%s-%s-image", baseName, "javascript")
+	case "go":
+		imageName = fmt.Sprintf("%s-%s-image", baseName, "go")
 	default:
 		imageName = ""
 	}
@@ -214,7 +225,7 @@ func buildImageFromDockerfile(client *client.Client, tags []string, dockerfilePa
 
 func runContainer(client *client.Client, dir, dockerImageName, containerName string) (string, error) {
 	// context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	
 	// create container
