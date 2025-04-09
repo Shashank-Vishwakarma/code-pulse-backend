@@ -31,6 +31,7 @@ const (
 	QUESTION_API_DELETE_ENDPOINT                          = "/:id"
 	QUESTION_API_GET_BY_USER_ENDPOINT                     = "/user"
 	QUESTION_API_GET_QUESTIONS_SUBMITTED_BY_USER_ENDPOINT = "/submitted"
+	QUESTIONS_API_GET_SUBMISSIONS_ON_A_QUESTION_ENDPOINT  = "/:id/submissions"
 
 	// Blog API Endpoints
 	BLOG_API_BASE_ENDPOINT           = "/api/v1/blogs"

@@ -453,3 +453,38 @@ func GetQuestionsSubmittedByUser(c *gin.Context) {
 
 	response.HandleResponse(c, http.StatusOK, "Questions retrieved successfully", questions)
 }
+
+func GetSubmissionsOnAQuestion(c *gin.Context) {
+	id := c.Param("id")
+
+	decodeUser, err := utils.GetDecodedUserFromContext(c)
+	if err != nil {
+		logrus.Errorf("Error getting decoded user: GetSubmissionsOnAQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+		return
+	}
+
+	options := options.Find().SetSort(bson.M{"createdAt": -1})
+	cursor, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CODE_SUBMISSION_COLLECTION).Find(
+		context.TODO(), 
+		bson.M{
+			"question_id": id,
+			"user_id": decodeUser.ID,
+		}, 
+		options,
+	)
+	if err != nil {
+		logrus.Errorf("Error getting all questions: GetSubmissionsOnAQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	var submissions []models.QuestionSubmission
+	if err := cursor.All(context.TODO(), &submissions); err != nil {
+		logrus.Errorf("Error decoding the submissions: GetSubmissionsOnAQuestion API: %v", err)
+		response.HandleResponse(c, http.StatusInternalServerError, "Something went wrong", nil)
+		return
+	}
+
+	response.HandleResponse(c, http.StatusOK, "Submissions retrieved successfully", submissions)
+}

@@ -15,16 +15,18 @@ type QuestionSubmission struct {
 	ID         string `json:"id" bson:"_id"`
 	QuestionID string `json:"question_id" bson:"question_id"`
 	UserID     string `json:"user_id" bson:"user_id"`
-	Status     string `json:"status" bson:"status"` // "success" or "fail"
-	CreatedAt time.Time `json:"created_at" bson:"created_at"`
+	Language string `json:"language" bson:"language"`
+	Code     string `json:"code" bson:"code"`
+	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
 }
 
 func CreateSubmission(questionSubmission *QuestionSubmission) (*mongo.InsertOneResult, error) {
 	result, err := database.DBClient.Database(config.Config.DATABASE_NAME).Collection(constants.CODE_SUBMISSION_COLLECTION).InsertOne(context.TODO(), bson.M{
 		"question_id": questionSubmission.QuestionID,
 		"user_id": questionSubmission.UserID,
-		"status": questionSubmission.Status,
-		"created_at": questionSubmission.CreatedAt,
+		"language": questionSubmission.Language,
+		"code": questionSubmission.Code,
+		"createdAt": questionSubmission.CreatedAt,
 	})
 	return result, err
 }

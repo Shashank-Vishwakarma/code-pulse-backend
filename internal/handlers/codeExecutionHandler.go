@@ -91,8 +91,6 @@ func ExecuteQuestion(c *gin.Context) {
 			code = utils.GenerateCodeTemplate(question.TestCases, body.Language, codeSnippet, body.Code)
 		}
 
-		fmt.Println(code)
-
 		// run the code for given language in its container
 		res, err := services.ExecuteCodeInDocker(body.Language, code)
 		if err != nil {
@@ -108,7 +106,8 @@ func ExecuteQuestion(c *gin.Context) {
 			_, err := models.CreateSubmission(&models.QuestionSubmission{
 				QuestionID: questionId,
 				UserID: decodeUser.ID,
-				Status: "success",
+				Language: body.Language,
+				Code: body.Code,
 				CreatedAt: time.Now(),
 			})
 			if err != nil {
