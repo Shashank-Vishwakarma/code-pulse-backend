@@ -52,7 +52,7 @@ type Env struct {
 func NewEnv() error {
 	path, _ := os.Getwd()
 	os.Chdir(path + "/../config")
-	// viper.SetConfigFile(".env")
+	viper.SetConfigFile(".env")
 
 	err := viper.ReadInConfig()
 	if err != nil {
