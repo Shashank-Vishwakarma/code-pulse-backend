@@ -32,7 +32,7 @@ type Env struct {
 
 	// Redis Configuration
 	REDIS_ENDPOINT string `mapstructure:"REDIS_ENDPOINT"`
-	REDIS_USERNAME string `mapstructure:"REDIS_USERNAME"`
+	// REDIS_USERNAME string `mapstructure:"REDIS_USERNAME"`
 	REDIS_PASSWORD string `mapstructure:"REDIS_PASSWORD"`
 	REDIS_PORT     string `mapstructure:"REDIS_PORT"`
 
@@ -100,7 +100,7 @@ func NewEnv() error {
 		"RABBITMQ_URL":     Config.RABBITMQ_URL,
 		"QUEUE_NAME":       Config.QUEUE_NAME,
 		"REDIS_ENDPOINT":   Config.REDIS_ENDPOINT,
-		"REDIS_USERNAME":   Config.REDIS_USERNAME,
+		// "REDIS_USERNAME":   Config.REDIS_USERNAME,
 		"REDIS_PASSWORD":        Config.REDIS_PASSWORD,
 		"REDIS_PORT":            Config.REDIS_PORT,
 		"CLOUDINARY_CLOUD_NAME": Config.CLOUDINARY_CLOUD_NAME,
